@@ -1,0 +1,359 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ResourceProcessingStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum ResourceStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum CaseStatus {
+  OPEN
+  UNDER_REVIEW
+  AWAITING_RESPONSE
+  COMPLETED
+  CLOSED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PartyType {
+  PERSON
+  COMPANY
+  GOVERNMENT
+  OTHER
+}
+
+enum DocumentProcessingStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+}
+
+enum DeadlineStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(USER)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  passwordResetTokens PasswordResetToken[]
+  auditLogs           AuditLog[]
+  aiConversations     AiConversation[]
+
+  createdLegalResources LegalResource[] @relation("LegalResourceCreatedBy")
+  updatedLegalResources LegalResource[] @relation("LegalResourceUpdatedBy")
+  assignedCases         Case[]          @relation("CaseAssignedUser")
+  createdCases          Case[]          @relation("CaseCreatedBy")
+  updatedCases          Case[]          @relation("CaseUpdatedBy")
+  createdCaseParties    CaseParty[]     @relation("CasePartyCreatedBy")
+  updatedCaseParties    CaseParty[]     @relation("CasePartyUpdatedBy")
+  createdCaseDocuments  CaseDocument[]  @relation("CaseDocumentCreatedBy")
+  updatedCaseDocuments  CaseDocument[]  @relation("CaseDocumentUpdatedBy")
+  createdDeadlines      Deadline[]      @relation("DeadlineCreatedBy")
+  updatedDeadlines      Deadline[]      @relation("DeadlineUpdatedBy")
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model LegalResource {
+  id              String  @id @default(uuid()) @db.Uuid
+  title           String
+  documentType    String  @map("document_type")
+  category        String
+  language        String
+  referenceNumber String? @map("reference_number")
+  year            Int?
+
+  processingStatus ResourceProcessingStatus @default(UPLOADED) @map("processing_status")
+  resourceStatus   ResourceStatus           @default(ACTIVE) @map("resource_status")
+
+  filePath        String  @map("file_path")
+  notes           String?
+  processingError String? @map("processing_error")
+
+  createdById String  @map("created_by") @db.Uuid
+  updatedById String? @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  createdBy User  @relation("LegalResourceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User? @relation("LegalResourceUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  chunks LegalChunk[]
+
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([processingStatus])
+  @@index([resourceStatus])
+  @@index([category])
+  @@index([documentType])
+  @@map("legal_resources")
+}
+
+model LegalChunk {
+  id              String @id @default(uuid()) @db.Uuid
+  legalResourceId String @map("legal_resource_id") @db.Uuid
+
+  chunkIndex    Int     @map("chunk_index")
+  sectionNumber String? @map("section_number")
+  heading       String?
+
+  pageStart Int? @map("page_start")
+  pageEnd   Int? @map("page_end")
+
+  text      String
+  embedding Unsupported("vector(1536)")?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  legalResource LegalResource @relation(fields: [legalResourceId], references: [id], onDelete: Cascade)
+
+  citations AiCitation[]
+
+  @@unique([legalResourceId, chunkIndex])
+  @@index([legalResourceId])
+  @@index([sectionNumber])
+  @@map("legal_chunks")
+}
+
+model Case {
+  id              String       @id @default(uuid()) @db.Uuid
+  referenceNumber String       @unique @map("reference_number")
+  title           String
+  caseType        String       @map("case_type")
+  category        String?
+  status          CaseStatus   @default(OPEN)
+  priority        CasePriority @default(MEDIUM)
+
+  assignedUserId String? @map("assigned_user_id") @db.Uuid
+
+  description String?
+
+  createdById String  @map("created_by") @db.Uuid
+  updatedById String? @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  assignedUser User? @relation("CaseAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdBy    User  @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy    User? @relation("CaseUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  parties         CaseParty[]
+  documents       CaseDocument[]
+  aiConversations AiConversation[]
+  deadlines       Deadline[]
+
+  @@index([assignedUserId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([status])
+  @@index([priority])
+  @@index([caseType])
+  @@index([category])
+  @@map("cases")
+}
+
+model CaseParty {
+  id     String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+
+  name       String
+  partyType  PartyType @map("party_type")
+  roleInCase String    @map("role_in_case")
+  notes      String?
+
+  createdById String  @map("created_by") @db.Uuid
+  updatedById String? @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  case      Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("CasePartyCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User? @relation("CasePartyUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([partyType])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("case_parties")
+}
+
+model CaseDocument {
+  id           String @id @default(uuid()) @db.Uuid
+  caseId       String @map("case_id") @db.Uuid
+  title        String
+  documentType String @map("document_type")
+  filePath     String @map("file_path")
+
+  extractedText    String?                  @map("extracted_text")
+  processingStatus DocumentProcessingStatus @default(UPLOADED) @map("processing_status")
+  processingError  String?                  @map("processing_error")
+
+  createdById String  @map("created_by") @db.Uuid
+  updatedById String? @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  case      Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("CaseDocumentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User? @relation("CaseDocumentUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([documentType])
+  @@index([processingStatus])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("case_documents")
+}
+
+model AiConversation {
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String  @map("user_id") @db.Uuid
+  caseId String? @map("case_id") @db.Uuid
+
+  title String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  case Case? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  messages AiMessage[]
+
+  @@index([userId])
+  @@index([caseId])
+  @@index([updatedAt])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  conversationId String        @map("conversation_id") @db.Uuid
+  role           AiMessageRole
+  content        String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  citations AiCitation[]
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_messages")
+}
+
+model AiCitation {
+  id           String @id @default(uuid()) @db.Uuid
+  messageId    String @map("message_id") @db.Uuid
+  legalChunkId String @map("legal_chunk_id") @db.Uuid
+
+  message    AiMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  legalChunk LegalChunk @relation(fields: [legalChunkId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, legalChunkId])
+  @@index([messageId])
+  @@index([legalChunkId])
+  @@map("ai_citations")
+}
+
+model Deadline {
+  id           String         @id @default(uuid()) @db.Uuid
+  caseId       String         @map("case_id") @db.Uuid
+  title        String
+  deadlineType String         @map("deadline_type")
+  dueDate      DateTime       @map("due_date")
+  status       DeadlineStatus @default(OPEN)
+
+  createdById String  @map("created_by") @db.Uuid
+  updatedById String? @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  case      Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("DeadlineCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User? @relation("DeadlineUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("deadlines")
+}
