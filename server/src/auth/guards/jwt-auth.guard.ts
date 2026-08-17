@@ -45,6 +45,7 @@ export class JwtAuthGuard implements CanActivate {
           email: true,
           role: true,
           isActive: true,
+          tokenVersion: true,
         },
       });
 
@@ -52,10 +53,15 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('User account is inactive');
       }
 
+      if (payload.tokenVersion !== user.tokenVersion) {
+        throw new UnauthorizedException('Session is no longer valid');
+      }
+
       request.user = {
         sub: user.id,
         email: user.email,
         role: user.role,
+        tokenVersion: user.tokenVersion,
       };
 
       return true;
