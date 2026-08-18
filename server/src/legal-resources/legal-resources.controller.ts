@@ -1,7 +1,10 @@
 import {
-  BadRequestException,
   Controller,
   Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
   Body,
   UploadedFile,
   UseGuards,
@@ -16,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { LegalResourcesService } from './legal-resources.service';
 import { CreateLegalResourceDto } from './dto/create-legal-resource.dto';
+import { UpdateLegalResourceDto } from './dto/update-legal-resource.dto';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -58,5 +62,54 @@ export class LegalResourcesController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.legalResourcesService.create(dto, file, request.user.sub);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  findAll() {
+    return this.legalResourcesService.findAll();
+  }
+
+  @Get('archived')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  findArchived() {
+    return this.legalResourcesService.findArchived();
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  findOne(@Param('id') id: string) {
+    return this.legalResourcesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateLegalResourceDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.legalResourcesService.update(id, dto, request.user.sub);
+  }
+
+  @Patch(':id/archive')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  archive(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.legalResourcesService.archive(id, request.user.sub);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  restore(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.legalResourcesService.restore(id, request.user.sub);
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  permanentDelete(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.legalResourcesService.permanentDelete(id, request.user.sub);
   }
 }

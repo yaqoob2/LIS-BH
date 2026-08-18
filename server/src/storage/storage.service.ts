@@ -52,4 +52,19 @@ export class StorageService {
       throw new Error(`File deletion failed: ${error.message}`);
     }
   }
+  async downloadFile(filePath: string): Promise<Buffer> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucket)
+      .download(filePath);
+
+    if (error || !data) {
+      throw new Error(
+        `File download failed: ${error?.message ?? 'Unknown error'}`,
+      );
+    }
+
+    const arrayBuffer = await data.arrayBuffer();
+
+    return Buffer.from(arrayBuffer);
+  }
 }
