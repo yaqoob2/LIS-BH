@@ -42,13 +42,27 @@ export class LegalResourcesController {
       type: 'object',
       required: ['title', 'documentType', 'category', 'language', 'file'],
       properties: {
-        title: { type: 'string' },
-        documentType: { type: 'string' },
-        category: { type: 'string' },
-        language: { type: 'string' },
-        referenceNumber: { type: 'string' },
-        year: { type: 'integer' },
-        notes: { type: 'string' },
+        title: {
+          type: 'string',
+        },
+        documentType: {
+          type: 'string',
+        },
+        category: {
+          type: 'string',
+        },
+        language: {
+          type: 'string',
+        },
+        referenceNumber: {
+          type: 'string',
+        },
+        year: {
+          type: 'integer',
+        },
+        notes: {
+          type: 'string',
+        },
         file: {
           type: 'string',
           format: 'binary',
@@ -111,5 +125,34 @@ export class LegalResourcesController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.legalResourcesService.permanentDelete(id, request.user.sub);
+  }
+
+  @Post(':id/extract-text')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  extractText(@Param('id') id: string) {
+    return this.legalResourcesService.extractText(id);
+  }
+
+  @Post(':id/process-chunks')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  processChunks(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.legalResourcesService.processChunks(id, request.user.sub);
+  }
+
+  @Post(':id/process-embeddings')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  processEmbeddings(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.legalResourcesService.processEmbeddings(id, request.user.sub);
+  }
+  @Post(':id/process')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  processResource(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.legalResourcesService.processResource(id, request.user.sub);
   }
 }

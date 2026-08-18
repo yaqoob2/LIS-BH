@@ -7,6 +7,10 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { LegalResourcesModule } from './legal-resources/legal-resources.module';
+import { RetrievalModule } from './retrieval/retrieval.module';
+import { AiModule } from './ai/ai.module';
+import { CasesModule } from './cases/cases.module';
+import { CasePartiesModule } from './case-parties/case-parties.module';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { LegalResourcesModule } from './legal-resources/legal-resources.module';
     UsersModule,
     StorageModule,
     LegalResourcesModule,
+    RetrievalModule,
+    AiModule,
+    CasesModule,
+    CasePartiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
