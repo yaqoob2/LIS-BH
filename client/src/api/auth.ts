@@ -15,3 +15,23 @@ export function login(data: LoginRequest): Promise<LoginResponse> {
 export function getMe(): Promise<AuthMeResponse> {
   return apiRequest<AuthMeResponse>("/auth/me");
 }
+
+export function forgotPassword(email: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({
+      token,
+      newPassword,
+    }),
+  });
+}

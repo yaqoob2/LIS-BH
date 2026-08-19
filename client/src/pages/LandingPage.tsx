@@ -127,9 +127,9 @@ export default function LandingPage() {
             className="pointer-events-none absolute left-1/2 top-1/2 w-[280px] -translate-x-1/2 -translate-y-1/2 opacity-[0.025] sm:w-[400px] lg:w-[560px]"
           />
 
-          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.88fr_1.12fr] lg:px-8 lg:py-24">
+          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-8 px-5 py-2 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14 lg:px-8 lg:py-24">
             <div className="max-w-xl">
-              <div className="mb-5 inline-flex items-center gap-2 border border-[#DFE3EA] bg-[#F7F8FA] px-3 py-1.5 text-xs font-medium text-[#556072]">
+              <div className="mb-5 hidden items-center gap-2 border border-[#DFE3EA] bg-[#F7F8FA] px-3 py-1.5 text-xs font-medium text-[#556072] sm:inline-flex">
                 <ShieldCheck size={14} />
                 Private legal intelligence workspace
               </div>
@@ -503,7 +503,9 @@ export default function LandingPage() {
 
       <footer className="border-t border-[#E5E8ED] bg-[#F8F9FA]">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-6 text-xs text-[#8992A1] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <span>Private Legal Intelligence Workspace</span>
+          <span>
+            © 2026 LIS-BH Legal Intelligence System. All rights reserved.
+          </span>
         </div>
       </footer>
     </div>
