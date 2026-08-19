@@ -11,6 +11,9 @@ import { RetrievalModule } from './retrieval/retrieval.module';
 import { AiModule } from './ai/ai.module';
 import { CasesModule } from './cases/cases.module';
 import { CasePartiesModule } from './case-parties/case-parties.module';
+import { CaseDocumentsModule } from './case-documents/case-documents.module';
+import { DeadlinesModule } from './deadlines/deadlines.module';
+import { AiConversationsModule } from './ai-conversations/ai-conversations.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { CasePartiesModule } from './case-parties/case-parties.module';
     AiModule,
     CasesModule,
     CasePartiesModule,
+    CaseDocumentsModule,
+    DeadlinesModule,
+    AiConversationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

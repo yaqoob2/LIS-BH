@@ -22,7 +22,11 @@ export class RetrievalService {
     private readonly embeddingsService: EmbeddingsService,
   ) {}
 
-  async search(question: string, limit = 5): Promise<SearchResult[]> {
+  async search(
+    question: string,
+    limit = 5,
+    minSimilarity = 0.3,
+  ): Promise<SearchResult[]> {
     const [embedding] = await this.embeddingsService.createEmbeddings([
       question,
     ]);
@@ -46,6 +50,9 @@ export class RetrievalService {
       WHERE lc."embedding" IS NOT NULL
         AND lr."resource_status" = 'ACTIVE'
         AND lr."processing_status" = 'READY'
+        AND (
+          1 - (lc."embedding" <=> ${vector}::vector)
+        ) >= ${minSimilarity}
       ORDER BY lc."embedding" <=> ${vector}::vector
       LIMIT ${limit};
     `;
