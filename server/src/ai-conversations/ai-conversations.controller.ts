@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -15,6 +17,7 @@ import { UserRole } from '../generated/prisma/client';
 import { AiConversationsService } from './ai-conversations.service';
 import { CreateAiConversationDto } from './dto/create-ai-conversation.dto';
 import { SendAiMessageDto } from './dto/send-ai-message.dto';
+import { UpdateAiConversationDto } from './dto/update-ai-conversation.dto';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -52,6 +55,29 @@ export class AiConversationsController {
   @Get(':id')
   findOne(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
     return this.aiConversationsService.findOne(
+      id,
+      request.user.sub,
+      request.user.role,
+    );
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAiConversationDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.aiConversationsService.update(
+      id,
+      dto.title,
+      request.user.sub,
+      request.user.role,
+    );
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.aiConversationsService.remove(
       id,
       request.user.sub,
       request.user.role,

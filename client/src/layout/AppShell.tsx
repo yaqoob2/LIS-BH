@@ -5,25 +5,22 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
-  UserRound,
   Users,
   X,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../auth/AuthContext";
-
-const navItemClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    "flex h-10 items-center gap-3 px-3 text-sm font-medium transition-colors",
-    isActive
-      ? "bg-white/10 text-white"
-      : "text-[#B9C3D3] hover:bg-white/[0.06] hover:text-white",
-  ].join(" ");
+import LanguageSwitcher from "../components/ui/LanguageSwitcher";
 
 export default function AppShell() {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isArabic = i18n.language.startsWith("ar");
 
   const initials =
     user?.name
@@ -33,20 +30,35 @@ export default function AppShell() {
       .slice(0, 2)
       .toUpperCase() ?? "U";
 
+  const navItemClass = ({ isActive }: { isActive: boolean }) =>
+    [
+      "flex h-10 items-center gap-3 px-3 text-[13px] font-medium transition-colors",
+      isArabic ? "border-r-2" : "border-l-2",
+      isActive
+        ? "border-[#233A6C] bg-[#F3F5F8] text-[#17223B]"
+        : "border-transparent text-[#667085] hover:bg-[#F7F8FA] hover:text-[#17223B]",
+    ].join(" ");
+
   function closeMobileMenu() {
     setMobileMenuOpen(false);
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F7F9] text-[#18212F]">
+    <div className="min-h-screen bg-[#F7F8FA] text-[#18212F]">
       {/* DESKTOP SIDEBAR */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[240px] flex-col bg-[#17223B] lg:flex">
+      <aside
+        className={`fixed inset-y-0 z-40 hidden w-[216px] flex-col bg-white lg:flex ${
+          isArabic
+            ? "right-0 border-l border-[#E7E9EE]"
+            : "left-0 border-r border-[#E7E9EE]"
+        }`}
+      >
         {/* LOGO */}
-        <div className="flex h-20 items-center border-b border-white/10 px-5">
+        <div className="flex h-16 items-center border-b border-[#E7E9EE] px-4">
           <img
             src="/LIS-logo.png"
             alt="LIS-BH"
-            className="h-12 w-auto object-contain brightness-0 invert"
+            className="h-10 w-auto object-contain"
           />
         </div>
 
@@ -54,42 +66,46 @@ export default function AppShell() {
         <nav className="flex-1 px-3 py-5">
           <div className="space-y-1">
             <NavLink to="/cases" className={navItemClass}>
-              <BriefcaseBusiness size={18} strokeWidth={1.7} />
-              Cases
+              <BriefcaseBusiness size={17} strokeWidth={1.7} />
+
+              {t("nav.cases")}
             </NavLink>
 
             <NavLink to="/ai" className={navItemClass}>
-              <MessageSquareText size={18} strokeWidth={1.7} />
-              AI
+              <MessageSquareText size={17} strokeWidth={1.7} />
+
+              {t("nav.ai")}
             </NavLink>
 
             <NavLink to="/legal-resources" className={navItemClass}>
-              <BookOpen size={18} strokeWidth={1.7} />
-              Legal Resources
+              <BookOpen size={17} strokeWidth={1.7} />
+
+              {t("nav.legalResources")}
             </NavLink>
 
             {user?.role === "ADMIN" && (
               <NavLink to="/users" className={navItemClass}>
-                <Users size={18} strokeWidth={1.7} />
-                Users
+                <Users size={17} strokeWidth={1.7} />
+
+                {t("nav.users")}
               </NavLink>
             )}
           </div>
         </nav>
 
         {/* USER */}
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-[#E7E9EE] p-3.5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-white/15 bg-white/[0.06] text-xs font-semibold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#DDE1E8] bg-[#F7F8FA] text-[11px] font-semibold text-[#233A6C]">
               {initials}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">
+              <p className="truncate text-[13px] font-medium text-[#273449]">
                 {user?.name}
               </p>
 
-              <p className="mt-0.5 text-[11px] uppercase tracking-wide text-[#8F9AAF]">
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
                 {user?.role}
               </p>
             </div>
@@ -97,11 +113,11 @@ export default function AppShell() {
             <button
               type="button"
               onClick={logout}
-              className="flex h-9 w-9 shrink-0 items-center justify-center text-[#AAB4C5] transition-colors hover:bg-white/[0.06] hover:text-white"
-              aria-label="Sign out"
-              title="Sign out"
+              className="flex h-8 w-8 shrink-0 items-center justify-center text-[#98A2B3] transition-colors hover:bg-[#F3F5F8] hover:text-[#17223B]"
+              aria-label={t("common.signOut")}
+              title={t("common.signOut")}
             >
-              <LogOut size={17} />
+              <LogOut size={16} />
             </button>
           </div>
         </div>
@@ -112,31 +128,37 @@ export default function AppShell() {
         <button
           type="button"
           onClick={closeMobileMenu}
-          className="fixed inset-0 z-40 bg-[#101828]/35 lg:hidden"
+          className="fixed inset-0 z-40 bg-[#101828]/25 lg:hidden"
           aria-label="Close navigation"
         />
       )}
 
       {/* MOBILE SIDEBAR */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-[#17223B] transition-transform duration-200 lg:hidden ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 z-50 flex w-[250px] flex-col bg-white transition-transform duration-200 lg:hidden ${
+          isArabic
+            ? `right-0 border-l border-[#E7E9EE] ${
+                mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+              }`
+            : `left-0 border-r border-[#E7E9EE] ${
+                mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+              }`
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-[#E7E9EE] px-4">
           <img
             src="/LIS-logo.png"
             alt="LIS-BH"
-            className="h-11 w-auto object-contain brightness-0 invert"
+            className="h-10 w-auto object-contain"
           />
 
           <button
             type="button"
             onClick={closeMobileMenu}
-            className="flex h-9 w-9 items-center justify-center text-[#B9C3D3] hover:text-white"
+            className="flex h-8 w-8 items-center justify-center text-[#667085] hover:bg-[#F3F5F8] hover:text-[#17223B]"
             aria-label="Close navigation"
           >
-            <X size={19} />
+            <X size={18} />
           </button>
         </div>
 
@@ -147,8 +169,9 @@ export default function AppShell() {
               onClick={closeMobileMenu}
               className={navItemClass}
             >
-              <BriefcaseBusiness size={18} strokeWidth={1.7} />
-              Cases
+              <BriefcaseBusiness size={17} strokeWidth={1.7} />
+
+              {t("nav.cases")}
             </NavLink>
 
             <NavLink
@@ -156,8 +179,9 @@ export default function AppShell() {
               onClick={closeMobileMenu}
               className={navItemClass}
             >
-              <MessageSquareText size={18} strokeWidth={1.7} />
-              AI
+              <MessageSquareText size={17} strokeWidth={1.7} />
+
+              {t("nav.ai")}
             </NavLink>
 
             <NavLink
@@ -165,8 +189,9 @@ export default function AppShell() {
               onClick={closeMobileMenu}
               className={navItemClass}
             >
-              <BookOpen size={18} strokeWidth={1.7} />
-              Legal Resources
+              <BookOpen size={17} strokeWidth={1.7} />
+
+              {t("nav.legalResources")}
             </NavLink>
 
             {user?.role === "ADMIN" && (
@@ -175,25 +200,27 @@ export default function AppShell() {
                 onClick={closeMobileMenu}
                 className={navItemClass}
               >
-                <Users size={18} strokeWidth={1.7} />
-                Users
+                <Users size={17} strokeWidth={1.7} />
+
+                {t("nav.users")}
               </NavLink>
             )}
           </div>
         </nav>
 
-        <div className="border-t border-white/10 p-4">
+        {/* MOBILE USER */}
+        <div className="border-t border-[#E7E9EE] p-3.5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center border border-white/15 bg-white/[0.06] text-xs font-semibold text-white">
+            <div className="flex h-9 w-9 items-center justify-center border border-[#DDE1E8] bg-[#F7F8FA] text-[11px] font-semibold text-[#233A6C]">
               {initials}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">
+              <p className="truncate text-[13px] font-medium text-[#273449]">
                 {user?.name}
               </p>
 
-              <p className="text-[11px] uppercase tracking-wide text-[#8F9AAF]">
+              <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
                 {user?.role}
               </p>
             </div>
@@ -201,45 +228,88 @@ export default function AppShell() {
             <button
               type="button"
               onClick={logout}
-              className="flex h-9 w-9 items-center justify-center text-[#AAB4C5] hover:text-white"
-              aria-label="Sign out"
+              className="flex h-8 w-8 items-center justify-center text-[#98A2B3] hover:bg-[#F3F5F8] hover:text-[#17223B]"
+              aria-label={t("common.signOut")}
+              title={t("common.signOut")}
             >
-              <LogOut size={17} />
+              <LogOut size={16} />
             </button>
           </div>
         </div>
       </aside>
 
       {/* MAIN AREA */}
-      <div className="lg:pl-[240px]">
+      <div className={isArabic ? "lg:pr-[216px]" : "lg:pl-[216px]"}>
         {/* TOPBAR */}
-        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-[#E3E6EB] bg-white/95 px-4 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
+        <header className="sticky top-0 z-30 flex h-12 items-center overflow-hidden border-b border-[#E7E9EE] bg-white px-4 sm:px-6 lg:px-7">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="mr-3 flex h-9 w-9 items-center justify-center border border-[#E1E4EA] text-[#344054] lg:hidden"
+            className={`flex h-8 w-8 shrink-0 items-center justify-center border border-[#E1E4EA] text-[#475467] lg:hidden ${
+              isArabic ? "ml-3" : "mr-3"
+            }`}
             aria-label="Open navigation"
           >
-            <Menu size={18} />
+            <Menu size={17} />
           </button>
 
-          <div className="flex min-w-0 flex-1 items-center">
-            <span className="text-sm font-medium text-[#667085]">
-              Legal Intelligence Workspace
-            </span>
+          {/* FEATURE TICKER */}
+          <div className="relative min-w-0 flex-1 overflow-hidden">
+            <div className="lis-feature-ticker flex w-max items-center gap-8 whitespace-nowrap pr-8 text-[11px] font-medium tracking-[0.02em] text-[#8B94A4]">
+              <span>Case Management</span>
+
+              <span className="text-[#C5CAD3]">•</span>
+
+              <span>Legal AI</span>
+
+              <span className="text-[#C5CAD3]">•</span>
+
+              <span>Legal Resources</span>
+
+              <span className="text-[#C5CAD3]">•</span>
+
+              <span>Case Documents</span>
+
+              <span className="text-[#C5CAD3]">•</span>
+
+              <span>Deadlines</span>
+
+              <span className="text-[#C5CAD3]">•</span>
+
+              <span>Secure Legal Workspace</span>
+            </div>
           </div>
 
-          <div className="hidden items-center gap-2 sm:flex">
-            <UserRound size={16} className="text-[#7B8494]" />
+          {/* LANGUAGE + USER */}
+          <div
+            className={`relative z-10 flex shrink-0 items-center gap-3 bg-white ${
+              isArabic ? "mr-5 pr-5" : "ml-5 pl-5"
+            }`}
+          >
+            <LanguageSwitcher />
 
-            <span className="max-w-[180px] truncate text-sm font-medium text-[#344054]">
-              {user?.name}
-            </span>
+            <div
+              className={`hidden sm:block ${
+                isArabic ? "text-left" : "text-right"
+              }`}
+            >
+              <p className="text-[12px] font-medium text-[#344054]">
+                {user?.name}
+              </p>
+
+              <p className="text-[9px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
+                {user?.role}
+              </p>
+            </div>
+
+            <div className="flex h-7 w-7 items-center justify-center border border-[#DDE1E8] bg-[#F7F8FA] text-[9px] font-semibold text-[#233A6C]">
+              {initials}
+            </div>
           </div>
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+        <main className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
           <Outlet />
         </main>
       </div>

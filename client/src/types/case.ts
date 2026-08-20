@@ -13,7 +13,7 @@ export interface CaseUser {
   email: string;
 }
 
-export interface CaseRecord {
+export interface CaseEntity {
   id: string;
   referenceNumber: string;
   title: string;
@@ -27,7 +27,20 @@ export interface CaseRecord {
   updatedById: string | null;
   createdAt: string;
   updatedAt: string;
+}
 
+export interface CaseRecord extends CaseEntity {
   assignedUser: CaseUser | null;
   createdBy: CaseUser;
+}
+
+export interface CreateCaseRequest {
+  referenceNumber: string;
+  title: string;
+  caseType: string;
+  category?: string;
+  status?: CaseStatus;
+  priority?: CasePriority;
+  description?: string;
+  assignedUserId?: string;
 }

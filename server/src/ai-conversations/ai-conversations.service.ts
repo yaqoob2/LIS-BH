@@ -40,6 +40,16 @@ export class AiConversationsService {
     return caseRecord;
   }
 
+  private createAutomaticTitle(message: string) {
+    const clean = message.replace(/\s+/g, ' ').trim();
+
+    if (clean.length <= 60) {
+      return clean;
+    }
+
+    return `${clean.slice(0, 57).trim()}...`;
+  }
+
   async create(
     dto: CreateAiConversationDto,
     userId: string,
@@ -116,6 +126,42 @@ export class AiConversationsService {
     return conversation;
   }
 
+  async update(id: string, title: string, userId: string, userRole: UserRole) {
+    await this.findOne(id, userId, userRole);
+
+    return this.prisma.aiConversation.update({
+      where: {
+        id,
+      },
+      data: {
+        title: title.trim(),
+      },
+      include: {
+        case: {
+          select: {
+            id: true,
+            referenceNumber: true,
+            title: true,
+          },
+        },
+      },
+    });
+  }
+
+  async remove(id: string, userId: string, userRole: UserRole) {
+    await this.findOne(id, userId, userRole);
+
+    await this.prisma.aiConversation.delete({
+      where: {
+        id,
+      },
+    });
+
+    return {
+      message: 'AI conversation deleted successfully',
+    };
+  }
+
   private async buildCaseContext(
     caseId: string,
     userId: string,
@@ -156,9 +202,9 @@ export class AiConversationsService {
     const partyText = parties
       .map(
         (party) =>
-          `- ${party.name} | Type: ${party.partyType} | Role: ${party.roleInCase}${
-            party.notes ? ` | Notes: ${party.notes}` : ''
-          }`,
+          `- ${party.name} | Type: ${party.partyType} | Role: ${
+            party.roleInCase
+          }${party.notes ? ` | Notes: ${party.notes}` : ''}`,
       )
       .join('\n');
 
@@ -279,12 +325,22 @@ ${documentText || 'No case documents recorded.'}
         });
       }
 
+      const isDefaultTitle =
+        conversation.title === 'Case AI Conversation' ||
+        conversation.title === 'General AI Conversation';
+
       await tx.aiConversation.update({
         where: {
           id: conversationId,
         },
         data: {
           updatedAt: new Date(),
+
+          ...(isDefaultTitle && history.length === 0
+            ? {
+                title: this.createAutomaticTitle(message),
+              }
+            : {}),
         },
       });
 

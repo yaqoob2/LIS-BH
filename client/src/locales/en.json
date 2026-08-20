@@ -1,0 +1,135 @@
+{
+  "nav": {
+    "cases": "Cases",
+    "ai": "AI",
+    "legalResources": "Legal Resources",
+    "users": "Users"
+  },
+  "common": {
+    "english": "English",
+    "arabic": "Arabic",
+    "signOut": "Sign out"
+  },
+  "landing": {
+    "nav": {
+      "capabilities": "Capabilities",
+      "howItWorks": "How it works",
+      "security": "Security",
+      "login": "Login"
+    },
+    "hero": {
+      "badge": "Private legal intelligence workspace",
+      "title1": "Legal intelligence.",
+      "title2": "Built for Bahrain.",
+      "description": "Manage cases, legal documents, deadlines and legal research in one secure AI-powered workspace.",
+      "login": "Login to Workspace",
+      "explore": "Explore Features"
+    },
+    "preview": {
+      "workspace": "Legal Workspace",
+      "overview": "Case intelligence overview",
+      "secure": "Secure",
+      "tabs": {
+        "cases": "Cases",
+        "documents": "Documents",
+        "ai": "Legal AI"
+      },
+      "metrics": {
+        "openCases": "Open Cases",
+        "underReview": "Under Review",
+        "highPriority": "High Priority",
+        "deadlines": "Deadlines"
+      },
+      "table": {
+        "reference": "Reference",
+        "case": "Case",
+        "status": "Status"
+      },
+      "sampleCases": {
+        "employment": "Employment Dispute",
+        "commercial": "Commercial Matter",
+        "contract": "Contract Review"
+      },
+      "status": {
+        "underReview": "Under Review",
+        "open": "Open",
+        "ready": "Ready",
+        "processing": "Processing"
+      },
+      "documents": {
+        "employmentContract": "Employment Contract",
+        "clientStatement": "Client Statement",
+        "supportingEvidence": "Supporting Evidence"
+      },
+      "documentTypes": {
+        "contract": "Contract",
+        "statement": "Statement",
+        "evidence": "Evidence"
+      },
+      "ai": {
+        "question": "What are the relevant legal considerations for this case?",
+        "label": "Legal AI",
+        "answer": "I can analyse the case context and retrieve relevant legal authority from the firm's legal knowledge base.",
+        "sources": "Sources available when relevant"
+      }
+    },
+    "capabilities": {
+      "label": "Core capabilities",
+      "title": "Everything needed for focused legal work.",
+      "case": {
+        "title": "Case Management",
+        "text": "Keep case information, parties, documents and deadlines together."
+      },
+      "ai": {
+        "title": "Legal AI",
+        "text": "Research legal questions and analyse case context through one dedicated assistant."
+      },
+      "resources": {
+        "title": "Legal Resources",
+        "text": "Use the firm’s organized legal knowledge base as legal authority."
+      },
+      "documents": {
+        "title": "Documents",
+        "text": "Securely upload and process case documents for legal work and AI context."
+      }
+    },
+    "workflow": {
+      "label": "One connected workspace",
+      "title": "From case facts to legal intelligence.",
+      "steps": {
+        "case": {
+          "title": "Case",
+          "text": "Start with the legal matter and core case information."
+        },
+        "context": {
+          "title": "Context",
+          "text": "Add parties, documents and important deadlines."
+        },
+        "ai": {
+          "title": "Legal AI",
+          "text": "Ask questions using the case context automatically."
+        },
+        "authority": {
+          "title": "Authority",
+          "text": "Use relevant legal resources as supporting sources."
+        }
+      }
+    },
+    "security": {
+      "label": "Private by design",
+      "title": "Built for confidential legal work.",
+      "text": "Each deployment operates with its own legal data, private documents, controlled user access and dedicated knowledge base.",
+      "privateStorage": "Private Storage",
+      "roleAccess": "Role-Based Access",
+      "secureData": "Secure Legal Data"
+    },
+    "cta": {
+      "title": "Access your legal workspace.",
+      "text": "Secure access for authorized legal teams.",
+      "button": "Login to LIS-BH"
+    },
+    "footer": {
+      "copyright": "© 2026 LIS-BH Legal Intelligence System. All rights reserved."
+    }
+  }
+}

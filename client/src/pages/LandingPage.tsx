@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   BookOpen,
@@ -11,18 +12,27 @@ import {
   X,
 } from "lucide-react";
 
+import LanguageSwitcher from "../components/ui/LanguageSwitcher";
+
 type PreviewTab = "cases" | "documents" | "ai";
 
 export default function LandingPage() {
+  const { t, i18n } = useTranslation();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [previewTab, setPreviewTab] = useState<PreviewTab>("cases");
+
+  const isArabic = i18n.language.startsWith("ar");
+
+  const arrowClass = isArabic ? "rotate-180" : "";
 
   return (
     <div className="min-h-screen bg-white text-[#18212F]">
       {/* NAVBAR */}
       <header className="sticky top-0 z-50 border-b border-[#E7E9EE] bg-white/95 backdrop-blur">
         <div className="mx-auto grid h-20 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-6 lg:px-8">
-          {/* LEFT - LOGO */}
+          {/* LOGO */}
           <Link to="/" className="justify-self-start">
             <img
               src="/LIS-logo.png"
@@ -31,50 +41,56 @@ export default function LandingPage() {
             />
           </Link>
 
-          {/* CENTER - DESKTOP NAVIGATION */}
+          {/* DESKTOP NAVIGATION */}
           <nav className="hidden items-center gap-12 md:flex lg:gap-16">
             <a
               href="#capabilities"
               className="whitespace-nowrap text-sm font-medium text-[#596273] transition-colors hover:text-[#17223B]"
             >
-              Capabilities
+              {t("landing.nav.capabilities")}
             </a>
 
             <a
               href="#how-it-works"
               className="whitespace-nowrap text-sm font-medium text-[#596273] transition-colors hover:text-[#17223B]"
             >
-              How it works
+              {t("landing.nav.howItWorks")}
             </a>
 
             <a
               href="#security"
               className="whitespace-nowrap text-sm font-medium text-[#596273] transition-colors hover:text-[#17223B]"
             >
-              Security
+              {t("landing.nav.security")}
             </a>
           </nav>
 
-          {/* RIGHT - DESKTOP LOGIN */}
-          <div className="hidden justify-self-end md:block">
+          {/* DESKTOP LANGUAGE + LOGIN */}
+          <div className="hidden items-center gap-3 justify-self-end md:flex">
+            <LanguageSwitcher />
+
             <Link
               to="/login"
               className="inline-flex h-10 items-center justify-center bg-[#17223B] px-5 text-sm font-medium text-white transition-colors hover:bg-[#243250]"
             >
-              Login
+              {t("landing.nav.login")}
             </Link>
           </div>
 
-          {/* RIGHT - MOBILE MENU BUTTON */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((current) => !current)}
-            className="col-start-3 row-start-1 flex h-9 w-9 items-center justify-center justify-self-end border border-[#E1E4EA] text-[#273244] md:hidden"
-            aria-label="Toggle navigation"
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
+          {/* MOBILE LANGUAGE + MENU */}
+          <div className="col-start-3 row-start-1 flex items-center gap-2 justify-self-end md:hidden">
+            <LanguageSwitcher />
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+              className="flex h-9 w-9 items-center justify-center border border-[#E1E4EA] text-[#273244]"
+              aria-label="Toggle navigation"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
 
         {/* MOBILE NAVIGATION */}
@@ -86,7 +102,7 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-2 py-2.5 text-sm font-medium text-[#596273]"
               >
-                Capabilities
+                {t("landing.nav.capabilities")}
               </a>
 
               <a
@@ -94,7 +110,7 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-2 py-2.5 text-sm font-medium text-[#596273]"
               >
-                How it works
+                {t("landing.nav.howItWorks")}
               </a>
 
               <a
@@ -102,7 +118,7 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-2 py-2.5 text-sm font-medium text-[#596273]"
               >
-                Security
+                {t("landing.nav.security")}
               </a>
 
               <Link
@@ -110,7 +126,7 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="mt-2 flex h-10 items-center justify-center bg-[#17223B] px-4 text-sm font-medium text-white"
               >
-                Login
+                {t("landing.nav.login")}
               </Link>
             </div>
           </div>
@@ -131,17 +147,20 @@ export default function LandingPage() {
             <div className="max-w-xl">
               <div className="mb-5 hidden items-center gap-2 border border-[#DFE3EA] bg-[#F7F8FA] px-3 py-1.5 text-xs font-medium text-[#556072] sm:inline-flex">
                 <ShieldCheck size={14} />
-                Private legal intelligence workspace
+
+                {t("landing.hero.badge")}
               </div>
 
               <h1 className="max-w-lg text-4xl font-semibold tracking-[-0.035em] text-[#172033] sm:text-5xl">
-                Legal intelligence.
-                <span className="block text-[#53627E]">Built for Bahrain.</span>
+                {t("landing.hero.title1")}
+
+                <span className="block text-[#53627E]">
+                  {t("landing.hero.title2")}
+                </span>
               </h1>
 
               <p className="mt-5 max-w-lg text-base leading-7 text-[#667085] sm:text-lg">
-                Manage cases, legal documents, deadlines and legal research in
-                one secure AI-powered workspace.
+                {t("landing.hero.description")}
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -149,42 +168,54 @@ export default function LandingPage() {
                   to="/login"
                   className="inline-flex h-10 items-center justify-center gap-2 bg-[#17223B] px-5 text-sm font-medium text-white transition-colors hover:bg-[#243250]"
                 >
-                  Login to Workspace
-                  <ArrowRight size={15} />
+                  {t("landing.hero.login")}
+
+                  <ArrowRight size={15} className={arrowClass} />
                 </Link>
 
                 <a
                   href="#capabilities"
                   className="inline-flex h-10 items-center justify-center border border-[#D9DDE5] bg-white px-5 text-sm font-medium text-[#293448] transition-colors hover:bg-[#F7F8FA]"
                 >
-                  Explore Features
+                  {t("landing.hero.explore")}
                 </a>
               </div>
             </div>
 
-            {/* INTERACTIVE PRODUCT PREVIEW */}
+            {/* PRODUCT PREVIEW */}
             <div className="border border-[#DDE1E8] bg-[#F7F8FA] p-2 shadow-[0_18px_45px_rgba(24,33,47,0.08)]">
               <div className="border border-[#E1E4EA] bg-white">
                 <div className="flex items-center justify-between border-b border-[#E7E9EE] px-4 py-3">
                   <div>
                     <p className="text-xs font-medium text-[#1D2939]">
-                      Legal Workspace
+                      {t("landing.preview.workspace")}
                     </p>
+
                     <p className="text-[11px] text-[#98A2B3]">
-                      Case intelligence overview
+                      {t("landing.preview.overview")}
                     </p>
                   </div>
 
                   <div className="flex h-7 items-center border border-[#E2E5EA] bg-[#FAFAFB] px-2.5 text-[11px] text-[#667085]">
-                    Secure
+                    {t("landing.preview.secure")}
                   </div>
                 </div>
 
+                {/* PREVIEW TABS */}
                 <div className="flex gap-1 border-b border-[#E7E9EE] px-3 pt-3">
                   {[
-                    { id: "cases", label: "Cases" },
-                    { id: "documents", label: "Documents" },
-                    { id: "ai", label: "Legal AI" },
+                    {
+                      id: "cases",
+                      label: t("landing.preview.tabs.cases"),
+                    },
+                    {
+                      id: "documents",
+                      label: t("landing.preview.tabs.documents"),
+                    },
+                    {
+                      id: "ai",
+                      label: t("landing.preview.tabs.ai"),
+                    },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -202,14 +233,15 @@ export default function LandingPage() {
                 </div>
 
                 <div className="min-h-[290px] p-4 sm:p-5">
+                  {/* CASES */}
                   {previewTab === "cases" && (
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {[
-                          ["Open Cases", "12"],
-                          ["Under Review", "4"],
-                          ["High Priority", "3"],
-                          ["Deadlines", "5"],
+                          [t("landing.preview.metrics.openCases"), "12"],
+                          [t("landing.preview.metrics.underReview"), "4"],
+                          [t("landing.preview.metrics.highPriority"), "3"],
+                          [t("landing.preview.metrics.deadlines"), "5"],
                         ].map(([label, value]) => (
                           <div
                             key={label}
@@ -218,6 +250,7 @@ export default function LandingPage() {
                             <p className="text-[10px] font-medium uppercase tracking-wide text-[#8B94A4]">
                               {label}
                             </p>
+
                             <p className="mt-1 text-xl font-semibold text-[#1D2939]">
                               {value}
                             </p>
@@ -227,15 +260,29 @@ export default function LandingPage() {
 
                       <div className="mt-4 border border-[#E4E7EC]">
                         <div className="grid grid-cols-[1fr_1.8fr_1fr] border-b border-[#E4E7EC] bg-[#F8F9FB] px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-[#8A94A4]">
-                          <span>Reference</span>
-                          <span>Case</span>
-                          <span>Status</span>
+                          <span>{t("landing.preview.table.reference")}</span>
+
+                          <span>{t("landing.preview.table.case")}</span>
+
+                          <span>{t("landing.preview.table.status")}</span>
                         </div>
 
                         {[
-                          ["CASE-001", "Employment Dispute", "Under Review"],
-                          ["CASE-002", "Commercial Matter", "Open"],
-                          ["CASE-003", "Contract Review", "Open"],
+                          [
+                            "CASE-001",
+                            t("landing.preview.sampleCases.employment"),
+                            t("landing.preview.status.underReview"),
+                          ],
+                          [
+                            "CASE-002",
+                            t("landing.preview.sampleCases.commercial"),
+                            t("landing.preview.status.open"),
+                          ],
+                          [
+                            "CASE-003",
+                            t("landing.preview.sampleCases.contract"),
+                            t("landing.preview.status.open"),
+                          ],
                         ].map((row) => (
                           <div
                             key={row[0]}
@@ -256,12 +303,25 @@ export default function LandingPage() {
                     </div>
                   )}
 
+                  {/* DOCUMENTS */}
                   {previewTab === "documents" && (
                     <div className="space-y-3">
                       {[
-                        ["Employment Contract", "Contract", "Ready"],
-                        ["Client Statement", "Statement", "Processing"],
-                        ["Supporting Evidence", "Evidence", "Ready"],
+                        [
+                          t("landing.preview.documents.employmentContract"),
+                          t("landing.preview.documentTypes.contract"),
+                          t("landing.preview.status.ready"),
+                        ],
+                        [
+                          t("landing.preview.documents.clientStatement"),
+                          t("landing.preview.documentTypes.statement"),
+                          t("landing.preview.status.processing"),
+                        ],
+                        [
+                          t("landing.preview.documents.supportingEvidence"),
+                          t("landing.preview.documentTypes.evidence"),
+                          t("landing.preview.status.ready"),
+                        ],
                       ].map(([title, type, status]) => (
                         <div
                           key={title}
@@ -281,7 +341,7 @@ export default function LandingPage() {
                             </div>
                           </div>
 
-                          <span className="ml-3 text-xs font-medium text-[#596A86]">
+                          <span className="mx-3 text-xs font-medium text-[#596A86]">
                             {status}
                           </span>
                         </div>
@@ -289,26 +349,30 @@ export default function LandingPage() {
                     </div>
                   )}
 
+                  {/* AI */}
                   {previewTab === "ai" && (
                     <div className="flex h-full min-h-[250px] flex-col">
                       <div className="max-w-[82%] border border-[#E4E7EC] bg-[#F8F9FB] px-4 py-3 text-sm text-[#475467]">
-                        What are the relevant legal considerations for this
-                        case?
+                        {t("landing.preview.ai.question")}
                       </div>
 
-                      <div className="ml-auto mt-3 max-w-[90%] border border-[#DCE2EB] bg-white px-4 py-3">
+                      <div
+                        className={`mt-3 max-w-[90%] border border-[#DCE2EB] bg-white px-4 py-3 ${
+                          isArabic ? "mr-auto" : "ml-auto"
+                        }`}
+                      >
                         <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[#344054]">
                           <MessageSquareText size={14} />
-                          Legal AI
+
+                          {t("landing.preview.ai.label")}
                         </div>
 
                         <p className="text-sm leading-6 text-[#667085]">
-                          I can analyse the case context and retrieve relevant
-                          legal authority from the firm's legal knowledge base.
+                          {t("landing.preview.ai.answer")}
                         </p>
 
                         <div className="mt-3 border-t border-[#EEF0F3] pt-2 text-xs text-[#7B8494]">
-                          Sources available when relevant
+                          {t("landing.preview.ai.sources")}
                         </div>
                       </div>
                     </div>
@@ -327,11 +391,11 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="max-w-xl">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#667085]">
-                Core capabilities
+                {t("landing.capabilities.label")}
               </p>
 
               <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[#18212F] sm:text-3xl">
-                Everything needed for focused legal work.
+                {t("landing.capabilities.title")}
               </h2>
             </div>
 
@@ -339,23 +403,23 @@ export default function LandingPage() {
               {[
                 {
                   icon: BriefcaseBusiness,
-                  title: "Case Management",
-                  text: "Keep case information, parties, documents and deadlines together.",
+                  title: t("landing.capabilities.case.title"),
+                  text: t("landing.capabilities.case.text"),
                 },
                 {
                   icon: MessageSquareText,
-                  title: "Legal AI",
-                  text: "Research legal questions and analyse case context through one dedicated assistant.",
+                  title: t("landing.capabilities.ai.title"),
+                  text: t("landing.capabilities.ai.text"),
                 },
                 {
                   icon: BookOpen,
-                  title: "Legal Resources",
-                  text: "Use the firm’s organized legal knowledge base as legal authority.",
+                  title: t("landing.capabilities.resources.title"),
+                  text: t("landing.capabilities.resources.text"),
                 },
                 {
                   icon: FileText,
-                  title: "Documents",
-                  text: "Securely upload and process case documents for legal work and AI context.",
+                  title: t("landing.capabilities.documents.title"),
+                  text: t("landing.capabilities.documents.text"),
                 },
               ].map(({ icon: Icon, title, text }) => (
                 <div
@@ -390,11 +454,11 @@ export default function LandingPage() {
             <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr]">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#667085]">
-                  One connected workspace
+                  {t("landing.workflow.label")}
                 </p>
 
                 <h2 className="mt-3 max-w-md text-2xl font-semibold tracking-tight sm:text-3xl">
-                  From case facts to legal intelligence.
+                  {t("landing.workflow.title")}
                 </h2>
               </div>
 
@@ -402,23 +466,23 @@ export default function LandingPage() {
                 {[
                   [
                     "01",
-                    "Case",
-                    "Start with the legal matter and core case information.",
+                    t("landing.workflow.steps.case.title"),
+                    t("landing.workflow.steps.case.text"),
                   ],
                   [
                     "02",
-                    "Context",
-                    "Add parties, documents and important deadlines.",
+                    t("landing.workflow.steps.context.title"),
+                    t("landing.workflow.steps.context.text"),
                   ],
                   [
                     "03",
-                    "Legal AI",
-                    "Ask questions using the case context automatically.",
+                    t("landing.workflow.steps.ai.title"),
+                    t("landing.workflow.steps.ai.text"),
                   ],
                   [
                     "04",
-                    "Authority",
-                    "Use relevant legal resources as supporting sources.",
+                    t("landing.workflow.steps.authority.title"),
+                    t("landing.workflow.steps.authority.text"),
                   ],
                 ].map(([number, title, text]) => (
                   <div key={number} className="bg-white p-5">
@@ -449,24 +513,24 @@ export default function LandingPage() {
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 text-sm font-medium text-[#DDE5F2]">
                 <ShieldCheck size={17} />
-                Private by design
+
+                {t("landing.security.label")}
               </div>
 
               <h2 className="mt-4 text-2xl font-semibold tracking-tight">
-                Built for confidential legal work.
+                {t("landing.security.title")}
               </h2>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-[#B8C2D2]">
-                Each deployment operates with its own legal data, private
-                documents, controlled user access and dedicated knowledge base.
+                {t("landing.security.text")}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {[
-                "Private Storage",
-                "Role-Based Access",
-                "Secure Legal Data",
+                t("landing.security.privateStorage"),
+                t("landing.security.roleAccess"),
+                t("landing.security.secureData"),
               ].map((item) => (
                 <span
                   key={item}
@@ -483,29 +547,29 @@ export default function LandingPage() {
         <section className="bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
             <h2 className="text-2xl font-semibold tracking-tight text-[#18212F] sm:text-3xl">
-              Access your legal workspace.
+              {t("landing.cta.title")}
             </h2>
 
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#737D8D]">
-              Secure access for authorized legal teams.
+              {t("landing.cta.text")}
             </p>
 
             <Link
               to="/login"
               className="mt-7 inline-flex h-10 items-center justify-center gap-2 bg-[#17223B] px-5 text-sm font-medium text-white transition-colors hover:bg-[#243250]"
             >
-              Login to LIS-BH
-              <ArrowRight size={15} />
+              {t("landing.cta.button")}
+
+              <ArrowRight size={15} className={arrowClass} />
             </Link>
           </div>
         </section>
       </main>
 
+      {/* FOOTER */}
       <footer className="border-t border-[#E5E8ED] bg-[#F8F9FA]">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-6 text-xs text-[#8992A1] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <span>
-            © 2026 LIS-BH Legal Intelligence System. All rights reserved.
-          </span>
+          <span>{t("landing.footer.copyright")}</span>
         </div>
       </footer>
     </div>

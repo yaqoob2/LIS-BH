@@ -9,6 +9,8 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 import CasesPage from "./pages/cases/CasesPage";
+import CaseDetailPage from "./pages/cases/CaseDetailPage";
+
 import AIPage from "./pages/ai/AIPage";
 import LegalResourcesPage from "./pages/legal-resources/LegalResourcesPage";
 import UsersPage from "./pages/users/UsersPage";
@@ -38,8 +40,13 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/cases" element={<CasesPage />} />
+
+            <Route path="/cases/:id" element={<CaseDetailPage />} />
+
             <Route path="/ai" element={<AIPage />} />
+
             <Route path="/legal-resources" element={<LegalResourcesPage />} />
+
             <Route path="/users" element={<UsersPage />} />
           </Route>
         </Route>

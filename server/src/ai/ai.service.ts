@@ -135,6 +135,18 @@ export class AiService {
         'اشرح',
         'وضح',
         'هل يمكن',
+        'next steps',
+        'immediate actions',
+        'action to take',
+        'actions to take',
+        'what should i do',
+        'what should we do',
+        'tell me the steps',
+        'tell me only',
+        'summarize',
+        'summarise',
+        'in short',
+        'briefly',
       ];
 
       return followUpPatterns.some((pattern) => text.includes(pattern));
