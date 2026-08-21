@@ -85,7 +85,7 @@ export default function AIPage() {
 
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messageScrollRef = useRef<HTMLDivElement | null>(null);
 
   const selectedCase = useMemo(
     () => cases.find((item) => item.id === draftCaseId) ?? null,
@@ -154,7 +154,14 @@ export default function AIPage() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
+    const container = messageScrollRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    container.scrollTo({
+      top: container.scrollHeight,
       behavior: "smooth",
     });
   }, [activeConversation?.messages, isSending]);
@@ -368,10 +375,10 @@ export default function AIPage() {
         </div>
 
         {/* AI WORKSPACE */}
-        <div className="mt-5 grid min-h-[650px] border border-[#E4E7EC] bg-white lg:h-[calc(100vh-155px)] lg:min-h-[600px] lg:overflow-hidden lg:grid-cols-[250px_1fr]">
+        <div className="mt-5 flex h-[calc(100dvh-150px)] min-h-[520px] flex-col overflow-hidden border border-[#E4E7EC] bg-white lg:grid lg:h-[calc(100dvh-155px)] lg:min-h-[600px] lg:grid-cols-[250px_1fr]">
           {/* CONVERSATIONS */}
-          <aside className="flex min-h-0 flex-col overflow-hidden border-b border-[#E4E7EC] bg-[#FAFAFB] lg:border-b-0 lg:border-r">
-            {/* NEW CHAT - STAYS FIXED */}
+          <aside className="flex max-h-[190px] min-h-0 shrink-0 flex-col overflow-hidden border-b border-[#E4E7EC] bg-[#FAFAFB] lg:max-h-none lg:border-b-0 lg:border-r">
+            {/* NEW CHAT */}
             <div className="shrink-0 border-b border-[#E7E9EE] p-3">
               <button
                 type="button"
@@ -383,8 +390,8 @@ export default function AIPage() {
               </button>
             </div>
 
-            {/* CONVERSATION LIST - SCROLLS SEPARATELY */}
-            <div className="max-h-[190px] min-h-0 overflow-y-auto overscroll-contain lg:max-h-none lg:flex-1">
+            {/* CONVERSATION LIST */}
+            <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain">
               {conversations.length === 0 ? (
                 <div className="px-4 py-6 text-center">
                   <MessageSquareText
@@ -446,7 +453,6 @@ export default function AIPage() {
                         </div>
                       </button>
 
-                      {/* MENU BUTTON */}
                       <button
                         type="button"
                         onClick={(event) => {
@@ -460,7 +466,6 @@ export default function AIPage() {
                         <MoreHorizontal size={15} />
                       </button>
 
-                      {/* MENU */}
                       {menuOpen && (
                         <div className="absolute right-2 top-9 z-30 w-[118px] border border-[#E1E4EA] bg-white py-1 shadow-sm">
                           <button
@@ -490,8 +495,8 @@ export default function AIPage() {
           </aside>
 
           {/* CHAT */}
-          <main className="flex min-h-[620px] min-w-0 flex-col lg:min-h-0 lg:overflow-hidden">
-            {/* CHAT HEADER - STAYS FIXED */}
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            {/* CHAT HEADER */}
             <div className="flex min-h-[58px] shrink-0 items-center justify-between gap-3 border-b border-[#E7E9EE] bg-white px-4 py-2.5 sm:px-5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -535,8 +540,11 @@ export default function AIPage() {
               )}
             </div>
 
-            {/* MESSAGES - SCROLLS SEPARATELY */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
+            {/* MESSAGES */}
+            <div
+              ref={messageScrollRef}
+              className="flex min-h-0 flex-1 touch-pan-y flex-col overflow-y-auto overscroll-contain px-4 py-5 sm:px-6"
+            >
               {isConversationLoading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <LoaderCircle
@@ -771,13 +779,11 @@ export default function AIPage() {
                       </p>
                     </div>
                   )}
-
-                  <div ref={bottomRef} />
                 </div>
               )}
             </div>
 
-            {/* COMPOSER - STAYS FIXED */}
+            {/* COMPOSER */}
             <div className="shrink-0 border-t border-[#E7E9EE] bg-[#FAFAFB] p-3 sm:p-4">
               <form
                 onSubmit={handleSubmit}
