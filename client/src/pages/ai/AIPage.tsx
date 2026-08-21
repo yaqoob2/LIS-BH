@@ -85,6 +85,8 @@ export default function AIPage() {
 
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [isMobileChatsOpen, setIsMobileChatsOpen] = useState(false);
+
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
 
   const selectedCase = useMemo(
@@ -102,6 +104,7 @@ export default function AIPage() {
 
   const openConversation = useCallback(async (conversationId: string) => {
     try {
+      setIsMobileChatsOpen(false);
       setIsConversationLoading(true);
       setMessageSources({});
       setOpenMenuId(null);
@@ -166,7 +169,22 @@ export default function AIPage() {
     });
   }, [activeConversation?.messages, isSending]);
 
+  useEffect(() => {
+    if (!isMobileChatsOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isMobileChatsOpen]);
+
   function startNewChat() {
+    setIsMobileChatsOpen(false);
     setActiveConversation(null);
     setDraftCaseId("");
     setMessage("");
@@ -349,6 +367,102 @@ export default function AIPage() {
     }
   }
 
+  function conversationList() {
+    if (conversations.length === 0) {
+      return (
+        <div className="px-4 py-6 text-center">
+          <MessageSquareText size={17} className="mx-auto text-[#98A2B3]" />
+
+          <p className="mt-2 text-[11px] text-[#98A2B3]">
+            No saved conversations.
+          </p>
+        </div>
+      );
+    }
+
+    return conversations.map((item) => {
+      const active = activeConversation?.id === item.id;
+
+      const menuOpen = openMenuId === item.id;
+
+      return (
+        <div key={item.id} className="relative border-b border-[#EEF0F3]">
+          <button
+            type="button"
+            onClick={() => void openConversation(item.id)}
+            className={`block w-full px-3.5 py-3 pr-10 text-left transition-colors ${
+              active ? "bg-white" : "hover:bg-white"
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              <MessageSquareText
+                size={13}
+                className={`mt-0.5 shrink-0 ${
+                  active ? "text-[#233A6C]" : "text-[#98A2B3]"
+                }`}
+              />
+
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`truncate text-[11.5px] font-medium ${
+                    active ? "text-[#17223B]" : "text-[#475467]"
+                  }`}
+                >
+                  {item.title}
+                </p>
+
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="truncate text-[9.5px] text-[#98A2B3]">
+                    {item.case ? item.case.referenceNumber : "General"}
+                  </p>
+
+                  <span className="shrink-0 text-[9px] text-[#B0B7C3]">
+                    {formatShortDate(item.updatedAt)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+
+              setOpenMenuId(menuOpen ? null : item.id);
+            }}
+            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center text-[#98A2B3] transition-colors hover:bg-[#F3F5F8] hover:text-[#475467]"
+            title="Conversation options"
+          >
+            <MoreHorizontal size={15} />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-2 top-9 z-30 w-[118px] border border-[#E1E4EA] bg-white py-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => openRename(item)}
+                className="flex h-8 w-full items-center gap-2 px-3 text-left text-[10.5px] text-[#475467] hover:bg-[#F7F8FA]"
+              >
+                <Pencil size={12} />
+                Rename
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openDelete(item)}
+                className="flex h-8 w-full items-center gap-2 px-3 text-left text-[10.5px] text-[#934B4B] hover:bg-[#FBF7F7]"
+              >
+                <Trash2 size={12} />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto flex min-h-[520px] w-full max-w-[1180px] items-center justify-center">
@@ -375,10 +489,9 @@ export default function AIPage() {
         </div>
 
         {/* AI WORKSPACE */}
-        <div className="mt-5 flex h-[calc(100dvh-150px)] min-h-[520px] flex-col overflow-hidden border border-[#E4E7EC] bg-white lg:grid lg:h-[calc(100dvh-155px)] lg:min-h-[600px] lg:grid-cols-[250px_1fr]">
-          {/* CONVERSATIONS */}
-          <aside className="flex max-h-[190px] min-h-0 shrink-0 flex-col overflow-hidden border-b border-[#E4E7EC] bg-[#FAFAFB] lg:max-h-none lg:border-b-0 lg:border-r">
-            {/* NEW CHAT */}
+        <div className="mt-4 flex h-[calc(100dvh-150px)] min-h-0 flex-col overflow-hidden border border-[#E4E7EC] bg-white lg:mt-5 lg:grid lg:h-[calc(100dvh-155px)] lg:min-h-[600px] lg:grid-cols-[250px_1fr]">
+          {/* DESKTOP CONVERSATION SIDEBAR */}
+          <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-[#E4E7EC] bg-[#FAFAFB] lg:flex">
             <div className="shrink-0 border-b border-[#E7E9EE] p-3">
               <button
                 type="button"
@@ -390,119 +503,36 @@ export default function AIPage() {
               </button>
             </div>
 
-            {/* CONVERSATION LIST */}
-            <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain">
-              {conversations.length === 0 ? (
-                <div className="px-4 py-6 text-center">
-                  <MessageSquareText
-                    size={17}
-                    className="mx-auto text-[#98A2B3]"
-                  />
-
-                  <p className="mt-2 text-[11px] text-[#98A2B3]">
-                    No saved conversations.
-                  </p>
-                </div>
-              ) : (
-                conversations.map((item) => {
-                  const active = activeConversation?.id === item.id;
-
-                  const menuOpen = openMenuId === item.id;
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="relative border-b border-[#EEF0F3]"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => void openConversation(item.id)}
-                        className={`block w-full px-3.5 py-3 pr-10 text-left transition-colors ${
-                          active ? "bg-white" : "hover:bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          <MessageSquareText
-                            size={13}
-                            className={`mt-0.5 shrink-0 ${
-                              active ? "text-[#233A6C]" : "text-[#98A2B3]"
-                            }`}
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className={`truncate text-[11.5px] font-medium ${
-                                active ? "text-[#17223B]" : "text-[#475467]"
-                              }`}
-                            >
-                              {item.title}
-                            </p>
-
-                            <div className="mt-1 flex items-center justify-between gap-2">
-                              <p className="truncate text-[9.5px] text-[#98A2B3]">
-                                {item.case
-                                  ? item.case.referenceNumber
-                                  : "General"}
-                              </p>
-
-                              <span className="shrink-0 text-[9px] text-[#B0B7C3]">
-                                {formatShortDate(item.updatedAt)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-
-                          setOpenMenuId(menuOpen ? null : item.id);
-                        }}
-                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center text-[#98A2B3] transition-colors hover:bg-[#F3F5F8] hover:text-[#475467]"
-                        title="Conversation options"
-                      >
-                        <MoreHorizontal size={15} />
-                      </button>
-
-                      {menuOpen && (
-                        <div className="absolute right-2 top-9 z-30 w-[118px] border border-[#E1E4EA] bg-white py-1 shadow-sm">
-                          <button
-                            type="button"
-                            onClick={() => openRename(item)}
-                            className="flex h-8 w-full items-center gap-2 px-3 text-left text-[10.5px] text-[#475467] hover:bg-[#F7F8FA]"
-                          >
-                            <Pencil size={12} />
-                            Rename
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openDelete(item)}
-                            className="flex h-8 w-full items-center gap-2 px-3 text-left text-[10.5px] text-[#934B4B] hover:bg-[#FBF7F7]"
-                          >
-                            <Trash2 size={12} />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {conversationList()}
             </div>
           </aside>
 
           {/* CHAT */}
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {/* CHAT HEADER */}
-            <div className="flex min-h-[58px] shrink-0 items-center justify-between gap-3 border-b border-[#E7E9EE] bg-white px-4 py-2.5 sm:px-5">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="text-[#53627E]" />
+            <div className="flex min-h-[58px] shrink-0 items-center gap-2 border-b border-[#E7E9EE] bg-white px-3 py-2.5 sm:px-5">
+              {/* MOBILE CHATS BUTTON */}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenMenuId(null);
+                  setIsMobileChatsOpen(true);
+                }}
+                className="flex h-8 shrink-0 items-center gap-1.5 border border-[#DDE1E8] bg-white px-2.5 text-[10.5px] font-medium text-[#475467] transition-colors hover:bg-[#F8F9FB] lg:hidden"
+              >
+                <MessageSquareText size={13} />
+                Chats
+              </button>
 
-                  <p className="truncate text-[12.5px] font-semibold text-[#273449]">
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Sparkles
+                    size={14}
+                    className="hidden shrink-0 text-[#53627E] sm:block"
+                  />
+
+                  <p className="truncate text-[12px] font-semibold text-[#273449] sm:text-[12.5px]">
                     {activeConversation
                       ? activeConversation.title
                       : "New Legal Chat"}
@@ -510,14 +540,14 @@ export default function AIPage() {
                 </div>
 
                 {activeConversation?.case && (
-                  <p className="mt-0.5 truncate pl-[22px] text-[10px] text-[#98A2B3]">
+                  <p className="mt-0.5 hidden truncate text-[10px] text-[#98A2B3] sm:block sm:pl-[22px]">
                     {activeConversation.case.referenceNumber} •{" "}
                     {activeConversation.case.title}
                   </p>
                 )}
 
                 {activeConversation && !activeConversation.case && (
-                  <p className="mt-0.5 pl-[22px] text-[10px] text-[#98A2B3]">
+                  <p className="mt-0.5 hidden text-[10px] text-[#98A2B3] sm:block sm:pl-[22px]">
                     General legal research
                   </p>
                 )}
@@ -527,9 +557,9 @@ export default function AIPage() {
                 <select
                   value={draftCaseId}
                   onChange={(event) => setDraftCaseId(event.target.value)}
-                  className="h-8 max-w-[240px] border border-[#DDE1E8] bg-white px-2.5 text-[10.5px] text-[#475467] outline-none focus:border-[#667694]"
+                  className="h-8 min-w-0 max-w-[125px] shrink-0 border border-[#DDE1E8] bg-white px-2 text-[10px] text-[#475467] outline-none focus:border-[#667694] sm:max-w-[240px] sm:px-2.5 sm:text-[10.5px]"
                 >
-                  <option value="">General Legal Chat</option>
+                  <option value="">General Chat</option>
 
                   {cases.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -543,7 +573,7 @@ export default function AIPage() {
             {/* MESSAGES */}
             <div
               ref={messageScrollRef}
-              className="flex min-h-0 flex-1 touch-pan-y flex-col overflow-y-auto overscroll-contain px-4 py-5 sm:px-6"
+              className="flex min-h-0 flex-1 touch-pan-y flex-col overflow-y-auto overscroll-contain px-3 py-4 sm:px-6 sm:py-5"
             >
               {isConversationLoading ? (
                 <div className="flex flex-1 items-center justify-center">
@@ -554,9 +584,9 @@ export default function AIPage() {
                 </div>
               ) : !activeConversation ||
                 activeConversation.messages.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-                  <div className="flex h-11 w-11 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB] text-[#53627E]">
-                    <Sparkles size={18} />
+                <div className="flex flex-1 flex-col items-center justify-center py-8 text-center sm:py-12">
+                  <div className="flex h-10 w-10 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB] text-[#53627E] sm:h-11 sm:w-11">
+                    <Sparkles size={17} />
                   </div>
 
                   <h2 className="mt-3 text-[14px] font-semibold text-[#273449]">
@@ -569,7 +599,7 @@ export default function AIPage() {
                       : "Research the legal resources available in your firm's knowledge base."}
                   </p>
 
-                  <div className="mt-5 flex max-w-[700px] flex-wrap justify-center gap-2">
+                  <div className="mt-4 hidden max-w-[700px] flex-wrap justify-center gap-2 sm:flex">
                     {(selectedCase
                       ? [
                           "What legal issues should be reviewed in this case?",
@@ -594,7 +624,7 @@ export default function AIPage() {
                   </div>
                 </div>
               ) : (
-                <div className="mx-auto flex w-full max-w-[880px] flex-col gap-7">
+                <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 sm:gap-7">
                   {activeConversation.messages.map((item) => {
                     const sources = messageSources[item.id] ?? [];
 
@@ -608,18 +638,18 @@ export default function AIPage() {
                         }
                       >
                         {item.role === "USER" ? (
-                          <div className="max-w-[78%] bg-[#17223B] px-4 py-3 text-[13px] leading-6 text-white">
+                          <div className="max-w-[88%] bg-[#17223B] px-3.5 py-2.5 text-[12.5px] leading-5 text-white sm:max-w-[78%] sm:px-4 sm:py-3 sm:text-[13px] sm:leading-6">
                             {item.content}
                           </div>
                         ) : (
                           <div className="w-full max-w-[830px]">
-                            <div className="flex gap-3.5">
-                              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB] text-[#53627E]">
-                                <Sparkles size={14} />
+                            <div className="flex gap-2.5 sm:gap-3.5">
+                              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB] text-[#53627E] sm:h-8 sm:w-8">
+                                <Sparkles size={13} />
                               </div>
 
                               <div className="min-w-0 flex-1">
-                                <div className="text-[13.5px] leading-[1.8] text-[#344054]">
+                                <div className="text-[13px] leading-[1.7] text-[#344054] sm:text-[13.5px] sm:leading-[1.8]">
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
@@ -766,8 +796,8 @@ export default function AIPage() {
                   })}
 
                   {isSending && (
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-8 w-8 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 items-center justify-center border border-[#E1E4EA] bg-[#F8F9FB] sm:h-8 sm:w-8">
                         <LoaderCircle
                           size={14}
                           className="animate-spin text-[#667085]"
@@ -784,7 +814,7 @@ export default function AIPage() {
             </div>
 
             {/* COMPOSER */}
-            <div className="shrink-0 border-t border-[#E7E9EE] bg-[#FAFAFB] p-3 sm:p-4">
+            <div className="shrink-0 border-t border-[#E7E9EE] bg-[#FAFAFB] p-2.5 sm:p-4">
               <form
                 onSubmit={handleSubmit}
                 className="mx-auto flex w-full max-w-[880px] items-end gap-2"
@@ -803,13 +833,13 @@ export default function AIPage() {
                   maxLength={10000}
                   rows={2}
                   disabled={isSending}
-                  className="min-h-[50px] flex-1 resize-none border border-[#DDE1E8] bg-white px-3.5 py-3 text-[13px] leading-5 text-[#18212F] outline-none placeholder:text-[#98A2B3] focus:border-[#667694] disabled:bg-[#F8F9FB]"
+                  className="min-h-[46px] flex-1 resize-none border border-[#DDE1E8] bg-white px-3 py-2.5 text-[12.5px] leading-5 text-[#18212F] outline-none placeholder:text-[#98A2B3] focus:border-[#667694] disabled:bg-[#F8F9FB] sm:min-h-[50px] sm:px-3.5 sm:py-3 sm:text-[13px]"
                 />
 
                 <button
                   type="submit"
                   disabled={isSending || message.trim().length < 2}
-                  className="flex h-[50px] w-[50px] shrink-0 items-center justify-center bg-[#17223B] text-white transition-colors hover:bg-[#243250] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-[46px] w-[46px] shrink-0 items-center justify-center bg-[#17223B] text-white transition-colors hover:bg-[#243250] disabled:cursor-not-allowed disabled:opacity-40 sm:h-[50px] sm:w-[50px]"
                   title="Send"
                 >
                   {isSending ? (
@@ -820,13 +850,67 @@ export default function AIPage() {
                 </button>
               </form>
 
-              <p className="mx-auto mt-2 max-w-[880px] text-[10px] text-[#98A2B3]">
+              <p className="mx-auto mt-1.5 hidden max-w-[880px] text-[10px] text-[#98A2B3] sm:block">
                 Legal AI responses should be reviewed before relying on them.
               </p>
             </div>
           </main>
         </div>
       </div>
+
+      {/* MOBILE CHAT DRAWER */}
+      {isMobileChatsOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden">
+          <button
+            type="button"
+            aria-label="Close chats"
+            onClick={() => {
+              setOpenMenuId(null);
+              setIsMobileChatsOpen(false);
+            }}
+            className="absolute inset-0 bg-[#101828]/35"
+          />
+
+          <div className="absolute inset-y-0 left-0 flex w-[86%] max-w-[330px] flex-col bg-[#FAFAFB] shadow-xl">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#E4E7EC] bg-white px-4">
+              <div className="flex items-center gap-2">
+                <MessageSquareText size={15} className="text-[#53627E]" />
+
+                <p className="text-[13px] font-semibold text-[#273449]">
+                  Chats
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenMenuId(null);
+                  setIsMobileChatsOpen(false);
+                }}
+                className="flex h-8 w-8 items-center justify-center text-[#667085] transition-colors hover:bg-[#F5F6F8]"
+                aria-label="Close chats"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="shrink-0 border-b border-[#E7E9EE] p-3">
+              <button
+                type="button"
+                onClick={startNewChat}
+                className="flex h-9 w-full items-center justify-center gap-2 bg-[#17223B] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#243250]"
+              >
+                <Plus size={14} />
+                New Chat
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {conversationList()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* RENAME MODAL */}
       {renameConversation && (
