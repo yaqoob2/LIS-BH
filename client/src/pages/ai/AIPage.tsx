@@ -367,10 +367,12 @@ export default function AIPage() {
           </p>
         </div>
 
-        <div className="mt-5 grid min-h-[650px] border border-[#E4E7EC] bg-white lg:grid-cols-[250px_1fr]">
+        {/* AI WORKSPACE */}
+        <div className="mt-5 grid min-h-[650px] border border-[#E4E7EC] bg-white lg:h-[calc(100vh-155px)] lg:min-h-[600px] lg:overflow-hidden lg:grid-cols-[250px_1fr]">
           {/* CONVERSATIONS */}
-          <aside className="border-b border-[#E4E7EC] bg-[#FAFAFB] lg:border-b-0 lg:border-r">
-            <div className="border-b border-[#E7E9EE] p-3">
+          <aside className="flex min-h-0 flex-col overflow-hidden border-b border-[#E4E7EC] bg-[#FAFAFB] lg:border-b-0 lg:border-r">
+            {/* NEW CHAT - STAYS FIXED */}
+            <div className="shrink-0 border-b border-[#E7E9EE] p-3">
               <button
                 type="button"
                 onClick={startNewChat}
@@ -381,7 +383,8 @@ export default function AIPage() {
               </button>
             </div>
 
-            <div className="max-h-[190px] overflow-y-auto lg:max-h-[590px]">
+            {/* CONVERSATION LIST - SCROLLS SEPARATELY */}
+            <div className="max-h-[190px] min-h-0 overflow-y-auto overscroll-contain lg:max-h-none lg:flex-1">
               {conversations.length === 0 ? (
                 <div className="px-4 py-6 text-center">
                   <MessageSquareText
@@ -487,9 +490,9 @@ export default function AIPage() {
           </aside>
 
           {/* CHAT */}
-          <main className="flex min-h-[620px] min-w-0 flex-col">
-            {/* CHAT HEADER */}
-            <div className="flex min-h-[58px] items-center justify-between gap-3 border-b border-[#E7E9EE] px-4 py-2.5 sm:px-5">
+          <main className="flex min-h-[620px] min-w-0 flex-col lg:min-h-0 lg:overflow-hidden">
+            {/* CHAT HEADER - STAYS FIXED */}
+            <div className="flex min-h-[58px] shrink-0 items-center justify-between gap-3 border-b border-[#E7E9EE] bg-white px-4 py-2.5 sm:px-5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-[#53627E]" />
@@ -532,8 +535,8 @@ export default function AIPage() {
               )}
             </div>
 
-            {/* MESSAGES */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-6">
+            {/* MESSAGES - SCROLLS SEPARATELY */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
               {isConversationLoading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <LoaderCircle
@@ -774,8 +777,8 @@ export default function AIPage() {
               )}
             </div>
 
-            {/* COMPOSER */}
-            <div className="border-t border-[#E7E9EE] bg-[#FAFAFB] p-3 sm:p-4">
+            {/* COMPOSER - STAYS FIXED */}
+            <div className="shrink-0 border-t border-[#E7E9EE] bg-[#FAFAFB] p-3 sm:p-4">
               <form
                 onSubmit={handleSubmit}
                 className="mx-auto flex w-full max-w-[880px] items-end gap-2"

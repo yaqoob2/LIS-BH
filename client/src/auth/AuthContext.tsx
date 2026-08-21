@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { getMe, login as loginRequest } from "../api/auth";
 import { clearAccessToken, getAccessToken, setAccessToken } from "./token";
@@ -26,7 +27,10 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState<AuthUser | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           role: currentUser.role,
         });
       } catch {
+        clearAccessToken();
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -58,17 +63,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await loginRequest({ email, password });
+    const response = await loginRequest({
+      email,
+      password,
+    });
 
     setAccessToken(response.accessToken);
+
     setUser(response.user);
   }, []);
 
   const logout = useCallback(() => {
     clearAccessToken();
     setUser(null);
-    window.location.href = "/login";
-  }, []);
+
+    navigate("/login", {
+      replace: true,
+    });
+  }, [navigate]);
 
   return (
     <AuthContext.Provider
