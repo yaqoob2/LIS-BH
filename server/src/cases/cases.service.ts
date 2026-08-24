@@ -15,6 +15,76 @@ import { UpdateCaseDto } from './dto/update-case.dto';
 export class CasesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly caseInclude = {
+    assignedUser: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+    createdBy: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+    client: {
+      select: {
+        id: true,
+        name: true,
+        whatsappNumber: true,
+        identityType: true,
+        isActive: true,
+      },
+    },
+  };
+
+  private async validateClient(clientId?: string) {
+    if (!clientId) {
+      return;
+    }
+
+    const client = await this.prisma.client.findUnique({
+      where: {
+        id: clientId,
+      },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+
+    if (!client) {
+      throw new BadRequestException('Client not found');
+    }
+
+    if (!client.isActive) {
+      throw new BadRequestException('Client is inactive');
+    }
+  }
+
+  private async validateAssignedUser(assignedUserId: string | undefined) {
+    if (!assignedUserId) {
+      return;
+    }
+
+    const assignedUser = await this.prisma.user.findUnique({
+      where: {
+        id: assignedUserId,
+      },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+
+    if (!assignedUser || !assignedUser.isActive) {
+      throw new BadRequestException('Assigned user is invalid or inactive');
+    }
+  }
+
   async create(dto: CreateCaseDto, userId: string, userRole: UserRole) {
     const referenceNumber = dto.referenceNumber.trim();
 
@@ -28,7 +98,6 @@ export class CasesService {
       throw new ConflictException('Case reference number already exists');
     }
 
-    // Normal users cannot assign a case to somebody else.
     if (
       dto.assignedUserId &&
       userRole !== UserRole.ADMIN &&
@@ -37,22 +106,9 @@ export class CasesService {
       throw new ForbiddenException('Users can only assign cases to themselves');
     }
 
-    // If someone is being assigned, make sure they exist and are active.
-    if (dto.assignedUserId) {
-      const assignedUser = await this.prisma.user.findUnique({
-        where: {
-          id: dto.assignedUserId,
-        },
-        select: {
-          id: true,
-          isActive: true,
-        },
-      });
+    await this.validateAssignedUser(dto.assignedUserId);
 
-      if (!assignedUser || !assignedUser.isActive) {
-        throw new BadRequestException('Assigned user is invalid or inactive');
-      }
-    }
+    await this.validateClient(dto.clientId);
 
     return this.prisma.$transaction(async (tx) => {
       const newCase = await tx.case.create({
@@ -60,13 +116,26 @@ export class CasesService {
           referenceNumber,
           title: dto.title.trim(),
           caseType: dto.caseType.trim(),
+
           category: dto.category?.trim() || null,
+
           status: dto.status,
           priority: dto.priority,
+
           description: dto.description?.trim() || null,
+
           assignedUserId: dto.assignedUserId || null,
+
+          clientId: dto.clientId || null,
+
+          totalFee: dto.totalFee !== undefined ? dto.totalFee : null,
+
+          currency: dto.currency?.trim().toUpperCase() || 'BHD',
+
           createdById: userId,
         },
+
+        include: this.caseInclude,
       });
 
       await tx.auditLog.create({
@@ -81,61 +150,51 @@ export class CasesService {
       return newCase;
     });
   }
+
   async findAll(userId: string, userRole: UserRole) {
     return this.prisma.case.findMany({
       where:
         userRole === UserRole.ADMIN
           ? {}
           : {
-              OR: [{ createdById: userId }, { assignedUserId: userId }],
+              OR: [
+                {
+                  createdById: userId,
+                },
+                {
+                  assignedUserId: userId,
+                },
+              ],
             },
+
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        assignedUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+
+      include: this.caseInclude,
     });
   }
+
   async findOne(id: string, userId: string, userRole: UserRole) {
     const caseRecord = await this.prisma.case.findFirst({
       where: {
         id,
+
         ...(userRole === UserRole.ADMIN
           ? {}
           : {
-              OR: [{ createdById: userId }, { assignedUserId: userId }],
+              OR: [
+                {
+                  createdById: userId,
+                },
+                {
+                  assignedUserId: userId,
+                },
+              ],
             }),
       },
-      include: {
-        assignedUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+
+      include: this.caseInclude,
     });
 
     if (!caseRecord) {
@@ -144,6 +203,7 @@ export class CasesService {
 
     return caseRecord;
   }
+
   async update(
     id: string,
     dto: UpdateCaseDto,
@@ -160,24 +220,17 @@ export class CasesService {
       throw new ForbiddenException('Users can only assign cases to themselves');
     }
 
-    if (dto.assignedUserId) {
-      const assignedUser = await this.prisma.user.findUnique({
-        where: { id: dto.assignedUserId },
-        select: {
-          id: true,
-          isActive: true,
-        },
-      });
+    await this.validateAssignedUser(dto.assignedUserId);
 
-      if (!assignedUser || !assignedUser.isActive) {
-        throw new BadRequestException('Assigned user is invalid or inactive');
-      }
+    if (dto.clientId !== undefined) {
+      await this.validateClient(dto.clientId);
     }
 
     if (dto.referenceNumber) {
       const duplicate = await this.prisma.case.findFirst({
         where: {
           referenceNumber: dto.referenceNumber.trim(),
+
           NOT: {
             id,
           },
@@ -191,10 +244,15 @@ export class CasesService {
 
     return this.prisma.$transaction(async (tx) => {
       const updatedCase = await tx.case.update({
-        where: { id },
+        where: {
+          id,
+        },
+
         data: {
           referenceNumber: dto.referenceNumber?.trim(),
+
           title: dto.title?.trim(),
+
           caseType: dto.caseType?.trim(),
 
           category:
@@ -203,6 +261,7 @@ export class CasesService {
               : undefined,
 
           status: dto.status,
+
           priority: dto.priority,
 
           description:
@@ -211,8 +270,20 @@ export class CasesService {
               : undefined,
 
           assignedUserId: dto.assignedUserId,
+
+          clientId: dto.clientId,
+
+          totalFee: dto.totalFee !== undefined ? dto.totalFee : undefined,
+
+          currency:
+            dto.currency !== undefined
+              ? dto.currency.trim().toUpperCase()
+              : undefined,
+
           updatedById: userId,
         },
+
+        include: this.caseInclude,
       });
 
       await tx.auditLog.create({
@@ -227,9 +298,12 @@ export class CasesService {
       return updatedCase;
     });
   }
+
   async claim(id: string, userId: string) {
     const caseRecord = await this.prisma.case.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     if (!caseRecord) {
@@ -246,6 +320,7 @@ export class CasesService {
           id,
           assignedUserId: null,
         },
+
         data: {
           assignedUserId: userId,
           updatedById: userId,
@@ -266,17 +341,24 @@ export class CasesService {
       });
 
       return tx.case.findUnique({
-        where: { id },
+        where: {
+          id,
+        },
+
+        include: this.caseInclude,
       });
     });
   }
+
   async assign(
     id: string,
     assignedUserId: string | null | undefined,
     adminUserId: string,
   ) {
     const caseRecord = await this.prisma.case.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     if (!caseRecord) {
@@ -285,7 +367,10 @@ export class CasesService {
 
     if (assignedUserId) {
       const user = await this.prisma.user.findUnique({
-        where: { id: assignedUserId },
+        where: {
+          id: assignedUserId,
+        },
+
         select: {
           id: true,
           isActive: true,
@@ -299,17 +384,25 @@ export class CasesService {
 
     return this.prisma.$transaction(async (tx) => {
       const updatedCase = await tx.case.update({
-        where: { id },
+        where: {
+          id,
+        },
+
         data: {
           assignedUserId: assignedUserId ?? null,
+
           updatedById: adminUserId,
         },
+
+        include: this.caseInclude,
       });
 
       await tx.auditLog.create({
         data: {
           userId: adminUserId,
+
           action: assignedUserId ? 'CASE_ASSIGNED' : 'CASE_UNASSIGNED',
+
           entityType: 'CASE',
           entityId: id,
         },

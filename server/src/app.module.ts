@@ -14,6 +14,10 @@ import { CasePartiesModule } from './case-parties/case-parties.module';
 import { CaseDocumentsModule } from './case-documents/case-documents.module';
 import { DeadlinesModule } from './deadlines/deadlines.module';
 import { AiConversationsModule } from './ai-conversations/ai-conversations.module';
+import { ClientsModule } from './clients/clients.module';
+import { FeeMilestonesModule } from './fee-milestones/fee-milestones.module';
+import { ClientPortalModule } from './client-portal/client-portal.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -32,6 +36,10 @@ import { AiConversationsModule } from './ai-conversations/ai-conversations.modul
     CaseDocumentsModule,
     DeadlinesModule,
     AiConversationsModule,
+    ClientsModule,
+    FeeMilestonesModule,
+    ClientPortalModule,
+    WhatsAppModule,
   ],
   controllers: [AppController],
   providers: [AppService],

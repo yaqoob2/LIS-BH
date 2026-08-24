@@ -1,9 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
+  Matches,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -57,7 +62,9 @@ export class CreateCaseDto {
   @IsEnum(CasePriority)
   priority?: CasePriority;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    example: 'Employee claims wrongful termination and unpaid benefits.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(5000)
@@ -67,6 +74,36 @@ export class CreateCaseDto {
     description: 'Primary assigned lawyer/user ID',
   })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   assignedUserId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Client linked to this case',
+  })
+  @IsOptional()
+  @IsUUID()
+  clientId?: string;
+
+  @ApiPropertyOptional({
+    example: 1000,
+    description: 'Total agreed professional fee for the case',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({
+    maxDecimalPlaces: 3,
+  })
+  @Min(0.001)
+  totalFee?: number;
+
+  @ApiPropertyOptional({
+    example: 'BHD',
+    default: 'BHD',
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z]{3}$/, {
+    message: 'Currency must be a 3-letter currency code',
+  })
+  currency?: string;
 }
