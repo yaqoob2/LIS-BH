@@ -4,11 +4,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { getCase } from "../../api/cases";
+
 import type { CasePriority, CaseRecord, CaseStatus } from "../../types/case";
 
 import CasePartiesTab from "./CasePartiesTab";
 import CaseDocumentsTab from "./CaseDocumentsTab";
 import CaseDeadlinesTab from "./CaseDeadlinesTab";
+import CaseFeesProgressTab from "./CaseFeesProgressTab";
 import CaseAiTab from "./CaseAiTab";
 
 const statusLabels: Record<CaseStatus, string> = {
@@ -34,8 +36,26 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatMoney(value: string | number | null, currency = "BHD") {
+  if (value === null) {
+    return "—";
+  }
+
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    return "—";
+  }
+
+  return `${currency} ${numeric.toLocaleString("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  })}`;
+}
+
 export default function CaseDetailPage() {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
   const [caseRecord, setCaseRecord] = useState<CaseRecord | null>(null);
@@ -43,7 +63,7 @@ export default function CaseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "parties" | "documents" | "deadlines" | "ai"
+    "overview" | "parties" | "documents" | "deadlines" | "fees" | "ai"
   >("overview");
 
   useEffect(() => {
@@ -55,6 +75,7 @@ export default function CaseDetailPage() {
 
       try {
         const data = await getCase(id);
+
         setCaseRecord(data);
       } catch (error) {
         const message =
@@ -74,7 +95,9 @@ export default function CaseDetailPage() {
       <div className="mx-auto w-full max-w-[1180px]">
         <div className="animate-pulse">
           <div className="h-4 w-24 bg-[#E9ECF0]" />
+
           <div className="mt-5 h-7 w-72 bg-[#E9ECF0]" />
+
           <div className="mt-3 h-4 w-40 bg-[#EEF0F3]" />
 
           <div className="mt-7 h-[220px] border border-[#E4E7EC] bg-white" />
@@ -204,6 +227,18 @@ export default function CaseDetailPage() {
 
           <button
             type="button"
+            onClick={() => setActiveTab("fees")}
+            className={`px-4 py-2.5 text-[12px] font-medium transition-colors ${
+              activeTab === "fees"
+                ? "border-b-2 border-[#233A6C] text-[#17223B]"
+                : "text-[#7B8494] hover:text-[#344054]"
+            }`}
+          >
+            Fees & Progress
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("ai")}
             className={`px-4 py-2.5 text-[12px] font-medium transition-colors ${
               activeTab === "ai"
@@ -228,6 +263,7 @@ export default function CaseDetailPage() {
             </div>
 
             <div className="grid gap-px bg-[#E7E9EE] sm:grid-cols-2">
+              {/* REFERENCE */}
               <div className="bg-white px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Reference
@@ -238,6 +274,7 @@ export default function CaseDetailPage() {
                 </p>
               </div>
 
+              {/* CASE TYPE */}
               <div className="bg-white px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Case Type
@@ -248,6 +285,7 @@ export default function CaseDetailPage() {
                 </p>
               </div>
 
+              {/* CATEGORY */}
               <div className="bg-white px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Category
@@ -258,6 +296,7 @@ export default function CaseDetailPage() {
                 </p>
               </div>
 
+              {/* PRIORITY */}
               <div className="bg-white px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Priority
@@ -267,8 +306,49 @@ export default function CaseDetailPage() {
                   {priorityLabels[caseRecord.priority]}
                 </p>
               </div>
+
+              {/* CLIENT */}
+              <div className="bg-white px-4 py-3.5">
+                <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+                  Client
+                </p>
+
+                {caseRecord.client ? (
+                  <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                    <UserRound size={13} className="shrink-0 text-[#98A2B3]" />
+
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <p className="text-[12px] font-medium text-[#344054]">
+                        {caseRecord.client.name}
+                      </p>
+
+                      <span className="text-[9px] text-[#C4C9D2]">•</span>
+
+                      <p className="text-[10px] text-[#667085]">
+                        {caseRecord.client.whatsappNumber}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-1.5 text-[12px] text-[#98A2B3]">
+                    No client linked
+                  </p>
+                )}
+              </div>
+
+              {/* PROFESSIONAL FEE */}
+              <div className="bg-white px-4 py-3.5">
+                <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+                  Professional Fee
+                </p>
+
+                <p className="mt-1.5 text-[12px] font-medium text-[#344054]">
+                  {formatMoney(caseRecord.totalFee, caseRecord.currency)}
+                </p>
+              </div>
             </div>
 
+            {/* DESCRIPTION */}
             <div className="border-t border-[#E7E9EE] px-4 py-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                 Description
@@ -289,6 +369,7 @@ export default function CaseDetailPage() {
             </div>
 
             <div className="divide-y divide-[#EEF0F3]">
+              {/* ASSIGNED TO */}
               <div className="px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Assigned To
@@ -303,6 +384,7 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
+              {/* CREATED BY */}
               <div className="px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Created By
@@ -313,6 +395,7 @@ export default function CaseDetailPage() {
                 </p>
               </div>
 
+              {/* CREATED */}
               <div className="px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Created
@@ -327,6 +410,7 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
+              {/* LAST UPDATED */}
               <div className="px-4 py-3.5">
                 <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
                   Last Updated
@@ -349,6 +433,9 @@ export default function CaseDetailPage() {
 
       {/* DEADLINES TAB */}
       {activeTab === "deadlines" && <CaseDeadlinesTab caseId={caseRecord.id} />}
+
+      {/* FEES & PROGRESS TAB */}
+      {activeTab === "fees" && <CaseFeesProgressTab caseRecord={caseRecord} />}
 
       {/* AI TAB */}
       {activeTab === "ai" && <CaseAiTab caseId={caseRecord.id} />}

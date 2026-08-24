@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BriefcaseBusiness, Plus, Search, UserRound } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  CalendarDays,
+  Plus,
+  Search,
+  UserRound,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { getCases } from "../../api/cases";
 import type { CasePriority, CaseRecord, CaseStatus } from "../../types/case";
+
 import CreateCaseDrawer from "./CreateCaseDrawer";
 
 const statusLabels: Record<CaseStatus, string> = {
@@ -57,6 +64,60 @@ function priorityClass(priority: CasePriority) {
   }
 }
 
+function formatDeadlineDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function deadlineClass(value: string) {
+  const now = new Date();
+  const dueDate = new Date(value);
+
+  if (dueDate.getTime() < now.getTime()) {
+    return "text-[#9B4444]";
+  }
+
+  const differenceMs = dueDate.getTime() - now.getTime();
+
+  const differenceDays = differenceMs / (1000 * 60 * 60 * 24);
+
+  if (differenceDays <= 3) {
+    return "text-[#7B603A]";
+  }
+
+  return "text-[#53627E]";
+}
+
+function deadlineLabel(value: string) {
+  const now = new Date();
+  const dueDate = new Date(value);
+
+  if (dueDate.getTime() < now.getTime()) {
+    return "Overdue";
+  }
+
+  const differenceMs = dueDate.getTime() - now.getTime();
+
+  const differenceDays = Math.ceil(differenceMs / (1000 * 60 * 60 * 24));
+
+  if (differenceDays === 0) {
+    return "Due today";
+  }
+
+  if (differenceDays === 1) {
+    return "Due tomorrow";
+  }
+
+  if (differenceDays <= 3) {
+    return `Due in ${differenceDays} days`;
+  }
+
+  return null;
+}
+
 export default function CasesPage() {
   const navigate = useNavigate();
 
@@ -76,6 +137,7 @@ export default function CasesPage() {
   const loadCases = useCallback(async () => {
     try {
       const data = await getCases();
+
       setCases(data);
     } catch (error) {
       const message =
@@ -116,7 +178,9 @@ export default function CasesPage() {
         item.title.toLowerCase().includes(query) ||
         item.caseType.toLowerCase().includes(query) ||
         item.category?.toLowerCase().includes(query) ||
-        item.assignedUser?.name.toLowerCase().includes(query);
+        item.client?.name.toLowerCase().includes(query) ||
+        item.assignedUser?.name.toLowerCase().includes(query) ||
+        item.nextDeadline?.title.toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === "ALL" || item.status === statusFilter;
@@ -235,10 +299,15 @@ export default function CasesPage() {
             className="h-[34px] border border-[#DDE1E8] bg-white px-2.5 text-[12px] text-[#475467] outline-none focus:border-[#667694] sm:w-[135px]"
           >
             <option value="ALL">All statuses</option>
+
             <option value="OPEN">Open</option>
+
             <option value="UNDER_REVIEW">Under Review</option>
+
             <option value="AWAITING_RESPONSE">Awaiting Response</option>
+
             <option value="COMPLETED">Completed</option>
+
             <option value="CLOSED">Closed</option>
           </select>
 
@@ -250,9 +319,13 @@ export default function CasesPage() {
             className="h-[34px] border border-[#DDE1E8] bg-white px-2.5 text-[12px] text-[#475467] outline-none focus:border-[#667694] sm:w-[130px]"
           >
             <option value="ALL">All priorities</option>
+
             <option value="LOW">Low</option>
+
             <option value="MEDIUM">Medium</option>
+
             <option value="HIGH">High</option>
+
             <option value="URGENT">Urgent</option>
           </select>
         </div>
@@ -267,7 +340,9 @@ export default function CasesPage() {
                   className="flex animate-pulse items-center gap-6 border-b border-[#EEF0F3] px-4 py-4 last:border-b-0"
                 >
                   <div className="h-3 w-20 bg-[#EEF0F3]" />
+
                   <div className="h-3 w-44 bg-[#EEF0F3]" />
+
                   <div className="h-3 w-24 bg-[#EEF0F3]" />
                 </div>
               ))}
@@ -296,99 +371,183 @@ export default function CasesPage() {
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-[#E4E7EC] bg-[#FAFAFB]">
-                        <th className="w-[125px] px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="w-[120px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Reference
                         </th>
 
-                        <th className="px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Case
                         </th>
 
-                        <th className="w-[130px] px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="w-[125px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                          Client
+                        </th>
+
+                        <th className="w-[95px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Type
                         </th>
 
-                        <th className="w-[125px] px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="w-[105px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Status
                         </th>
 
-                        <th className="w-[90px] px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="w-[75px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Priority
                         </th>
 
-                        <th className="w-[155px] px-3.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                        <th className="w-[150px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
+                          Next Deadline
+                        </th>
+
+                        <th className="w-[125px] px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[#7B8494]">
                           Assigned
                         </th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {filteredCases.map((item) => (
-                        <tr
-                          key={item.id}
-                          onClick={() => navigate(`/cases/${item.id}`)}
-                          className="cursor-pointer border-b border-[#EEF0F3] transition-colors last:border-b-0 hover:bg-[#FAFBFC]"
-                        >
-                          <td className="whitespace-nowrap px-3.5 py-3 text-[12px] font-medium text-[#354766]">
-                            {item.referenceNumber}
-                          </td>
+                      {filteredCases.map((item) => {
+                        const deadlineStatus = item.nextDeadline
+                          ? deadlineLabel(item.nextDeadline.dueDate)
+                          : null;
 
-                          <td className="px-3.5 py-3">
-                            <p className="max-w-[420px] truncate text-[12.5px] font-medium text-[#273449]">
-                              {item.title}
-                            </p>
+                        return (
+                          <tr
+                            key={item.id}
+                            onClick={() => navigate(`/cases/${item.id}`)}
+                            className="cursor-pointer border-b border-[#EEF0F3] transition-colors last:border-b-0 hover:bg-[#FAFBFC]"
+                          >
+                            {/* REFERENCE */}
+                            <td className="whitespace-nowrap px-3 py-3 text-[11.5px] font-medium text-[#354766]">
+                              {item.referenceNumber}
+                            </td>
 
-                            {item.category && (
-                              <p className="mt-0.5 max-w-[420px] truncate text-[10.5px] text-[#98A2B3]">
-                                {item.category}
+                            {/* CASE */}
+                            <td className="px-3 py-3">
+                              <p className="max-w-[285px] truncate text-[12px] font-medium text-[#273449]">
+                                {item.title}
                               </p>
-                            )}
-                          </td>
 
-                          <td className="whitespace-nowrap px-3.5 py-3 text-[12px] text-[#667085]">
-                            {item.caseType}
-                          </td>
+                              {item.category && (
+                                <p className="mt-0.5 max-w-[285px] truncate text-[10px] text-[#98A2B3]">
+                                  {item.category}
+                                </p>
+                              )}
+                            </td>
 
-                          <td className="whitespace-nowrap px-3.5 py-3">
-                            <span
-                              className={`inline-flex border px-1.5 py-[2px] text-[10px] font-medium ${statusClass(
-                                item.status,
-                              )}`}
-                            >
-                              {statusLabels[item.status]}
-                            </span>
-                          </td>
+                            {/* CLIENT */}
+                            <td className="px-3 py-3">
+                              {item.client ? (
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  <UserRound
+                                    size={12}
+                                    className="shrink-0 text-[#A3AAB7]"
+                                  />
 
-                          <td className="whitespace-nowrap px-3.5 py-3">
-                            <span
-                              className={`text-[11.5px] font-medium ${priorityClass(
-                                item.priority,
-                              )}`}
-                            >
-                              {priorityLabels[item.priority]}
-                            </span>
-                          </td>
-
-                          <td className="whitespace-nowrap px-3.5 py-3">
-                            {item.assignedUser ? (
-                              <div className="flex min-w-0 items-center gap-1.5">
-                                <UserRound
-                                  size={12}
-                                  className="shrink-0 text-[#A3AAB7]"
-                                />
-
-                                <span className="truncate text-[11.5px] text-[#667085]">
-                                  {item.assignedUser.name}
+                                  <span className="max-w-[105px] truncate text-[11px] text-[#667085]">
+                                    {item.client.name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-[#B0B7C3]">
+                                  —
                                 </span>
-                              </div>
-                            ) : (
-                              <span className="text-[11.5px] text-[#98A2B3]">
-                                Unassigned
+                              )}
+                            </td>
+
+                            {/* TYPE */}
+                            <td className="whitespace-nowrap px-3 py-3 text-[11.5px] text-[#667085]">
+                              {item.caseType}
+                            </td>
+
+                            {/* STATUS */}
+                            <td className="whitespace-nowrap px-3 py-3">
+                              <span
+                                className={`inline-flex border px-1.5 py-[2px] text-[9.5px] font-medium ${statusClass(
+                                  item.status,
+                                )}`}
+                              >
+                                {statusLabels[item.status]}
                               </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+
+                            {/* PRIORITY */}
+                            <td className="whitespace-nowrap px-3 py-3">
+                              <span
+                                className={`text-[11px] font-medium ${priorityClass(
+                                  item.priority,
+                                )}`}
+                              >
+                                {priorityLabels[item.priority]}
+                              </span>
+                            </td>
+
+                            {/* NEXT DEADLINE */}
+                            <td className="px-3 py-3">
+                              {item.nextDeadline ? (
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <CalendarDays
+                                      size={12}
+                                      className={deadlineClass(
+                                        item.nextDeadline.dueDate,
+                                      )}
+                                    />
+
+                                    <span
+                                      className={`whitespace-nowrap text-[10.5px] font-medium ${deadlineClass(
+                                        item.nextDeadline.dueDate,
+                                      )}`}
+                                    >
+                                      {formatDeadlineDate(
+                                        item.nextDeadline.dueDate,
+                                      )}
+                                    </span>
+                                  </div>
+
+                                  {deadlineStatus ? (
+                                    <p
+                                      className={`mt-0.5 text-[9px] ${deadlineClass(
+                                        item.nextDeadline.dueDate,
+                                      )}`}
+                                    >
+                                      {deadlineStatus}
+                                    </p>
+                                  ) : (
+                                    <p className="mt-0.5 max-w-[135px] truncate text-[9px] text-[#98A2B3]">
+                                      {item.nextDeadline.title}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-[#B0B7C3]">
+                                  —
+                                </span>
+                              )}
+                            </td>
+
+                            {/* ASSIGNED */}
+                            <td className="whitespace-nowrap px-3 py-3">
+                              {item.assignedUser ? (
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  <UserRound
+                                    size={12}
+                                    className="shrink-0 text-[#A3AAB7]"
+                                  />
+
+                                  <span className="max-w-[105px] truncate text-[11px] text-[#667085]">
+                                    {item.assignedUser.name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-[#98A2B3]">
+                                  Unassigned
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -422,7 +581,7 @@ export default function CasesPage() {
                       </span>
                     </div>
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-[#7B8494]">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-[#7B8494]">
                       <span>{item.caseType}</span>
 
                       <span className="text-[#C4C9D2]">•</span>
@@ -433,10 +592,42 @@ export default function CasesPage() {
 
                       <span className="text-[#C4C9D2]">•</span>
 
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <UserRound
+                          size={10}
+                          className="shrink-0 text-[#A3AAB7]"
+                        />
+
+                        <span className="truncate">
+                          {item.client?.name ?? "No client"}
+                        </span>
+                      </span>
+
+                      <span className="text-[#C4C9D2]">•</span>
+
                       <span className="truncate">
                         {item.assignedUser?.name ?? "Unassigned"}
                       </span>
                     </div>
+
+                    {/* MOBILE DEADLINE */}
+                    {item.nextDeadline && (
+                      <div className="mt-2 flex items-center gap-1.5 border-t border-[#F0F1F3] pt-2">
+                        <CalendarDays
+                          size={11}
+                          className={deadlineClass(item.nextDeadline.dueDate)}
+                        />
+
+                        <span
+                          className={`text-[10px] font-medium ${deadlineClass(
+                            item.nextDeadline.dueDate,
+                          )}`}
+                        >
+                          Next deadline:{" "}
+                          {formatDeadlineDate(item.nextDeadline.dueDate)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

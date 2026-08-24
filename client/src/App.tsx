@@ -15,6 +15,8 @@ import AIPage from "./pages/ai/AIPage";
 import LegalResourcesPage from "./pages/legal-resources/LegalResourcesPage";
 import UsersPage from "./pages/users/UsersPage";
 
+import ClientPortalAccessPage from "./pages/client-portal/ClientPortalAccessPage";
+
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -32,11 +34,17 @@ export default function App() {
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<LandingPage />} />
+
         <Route path="/login" element={<LoginPage />} />
+
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* AUTHENTICATED */}
+        {/* CLIENT PORTAL - PUBLIC */}
+        <Route path="/portal/access" element={<ClientPortalAccessPage />} />
+
+        {/* AUTHENTICATED STAFF */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/cases" element={<CasesPage />} />

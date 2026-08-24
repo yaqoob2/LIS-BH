@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Plus, Search, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { createCase } from "../../api/cases";
+import { getClients } from "../../api/clients";
 import { getUsers } from "../../api/users";
 import { useAuth } from "../../auth/AuthContext";
 
@@ -11,8 +12,10 @@ import type {
   CaseStatus,
   CreateCaseRequest,
 } from "../../types/case";
-
+import type { Client } from "../../types/client";
 import type { InternalUser } from "../../types/user";
+
+import CreateClientModal from "./CreateClientModal";
 
 interface CreateCaseDrawerProps {
   open: boolean;
@@ -31,14 +34,77 @@ export default function CreateCaseDrawer({
   const [title, setTitle] = useState("");
   const [caseType, setCaseType] = useState("");
   const [category, setCategory] = useState("");
+
   const [status, setStatus] = useState<CaseStatus>("OPEN");
+
   const [priority, setPriority] = useState<CasePriority>("MEDIUM");
+
   const [description, setDescription] = useState("");
   const [assignedUserId, setAssignedUserId] = useState("");
 
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
+  const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
+
+  const [totalFee, setTotalFee] = useState("");
+
   const [users, setUsers] = useState<InternalUser[]>([]);
+
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [createClientOpen, setCreateClientOpen] = useState(false);
+
+  const selectedClient = useMemo(
+    () => clients.find((item) => item.id === selectedClientId) ?? null,
+    [clients, selectedClientId],
+  );
+
+  const filteredClients = useMemo(() => {
+    const query = clientSearch.trim().toLowerCase();
+
+    if (!query) {
+      return clients.slice(0, 6);
+    }
+
+    return clients
+      .filter((item) => {
+        return (
+          item.name.toLowerCase().includes(query) ||
+          item.whatsappNumber.toLowerCase().includes(query) ||
+          item.identityNumberMasked.toLowerCase().includes(query)
+        );
+      })
+      .slice(0, 6);
+  }, [clients, clientSearch]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    async function loadClients() {
+      try {
+        setIsLoadingClients(true);
+
+        const data = await getClients();
+
+        setClients(data.filter((item) => item.isActive));
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Unable to load clients.",
+        );
+      } finally {
+        setIsLoadingClients(false);
+      }
+    }
+
+    void loadClients();
+  }, [open]);
 
   useEffect(() => {
     if (!open || user?.role !== "ADMIN") {
@@ -86,6 +152,12 @@ export default function CreateCaseDrawer({
     setPriority("MEDIUM");
     setDescription("");
     setAssignedUserId("");
+
+    setSelectedClientId("");
+    setClientSearch("");
+    setIsClientSearchOpen(false);
+
+    setTotalFee("");
   }
 
   function handleClose() {
@@ -97,12 +169,44 @@ export default function CreateCaseDrawer({
     onClose();
   }
 
+  function handleClientSelected(client: Client) {
+    setClients((current) => {
+      const exists = current.some((item) => item.id === client.id);
+
+      if (exists) {
+        return current.map((item) => (item.id === client.id ? client : item));
+      }
+
+      return [client, ...current];
+    });
+
+    setSelectedClientId(client.id);
+    setClientSearch("");
+    setIsClientSearchOpen(false);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!referenceNumber.trim() || !title.trim() || !caseType.trim()) {
       toast.error("Reference number, title and case type are required.");
       return;
+    }
+
+    const cleanFee = totalFee.trim();
+
+    if (cleanFee) {
+      if (!/^\d+(\.\d{1,3})?$/.test(cleanFee)) {
+        toast.error("Professional fee can have up to 3 decimal places.");
+        return;
+      }
+
+      const numericFee = Number(cleanFee);
+
+      if (!Number.isFinite(numericFee) || numericFee < 0.001) {
+        toast.error("Professional fee must be greater than zero.");
+        return;
+      }
     }
 
     const payload: CreateCaseRequest = {
@@ -123,6 +227,15 @@ export default function CreateCaseDrawer({
 
     if (assignedUserId) {
       payload.assignedUserId = assignedUserId;
+    }
+
+    if (selectedClientId) {
+      payload.clientId = selectedClientId;
+    }
+
+    if (cleanFee) {
+      payload.totalFee = Number(cleanFee);
+      payload.currency = "BHD";
     }
 
     try {
@@ -188,6 +301,13 @@ export default function CreateCaseDrawer({
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 overflow-y-auto px-5 py-5">
             <div className="space-y-4">
+              {/* CASE INFORMATION */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
+                  Case Information
+                </p>
+              </div>
+
               {/* REFERENCE */}
               <div>
                 <label
@@ -377,9 +497,186 @@ export default function CreateCaseDrawer({
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder="Optional case summary..."
                   maxLength={5000}
-                  rows={5}
+                  rows={4}
                   className="w-full resize-none border border-[#DDE1E8] bg-white px-3 py-2.5 text-[12px] leading-5 text-[#18212F] outline-none placeholder:text-[#98A2B3] focus:border-[#667694]"
                 />
+              </div>
+
+              {/* CLIENT + FEE DIVIDER */}
+              <div className="border-t border-[#EEF0F3] pt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
+                  Client & Fee
+                </p>
+              </div>
+
+              {/* CLIENT */}
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label
+                    htmlFor="clientSearch"
+                    className="text-[12px] font-medium text-[#344054]"
+                  >
+                    Client
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setCreateClientOpen(true)}
+                    className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[#53627E] transition-colors hover:text-[#17223B]"
+                  >
+                    <Plus size={12} />
+                    Add Client
+                  </button>
+                </div>
+
+                {selectedClient ? (
+                  <div className="flex items-center justify-between border border-[#DDE1E8] bg-[#FAFAFB] px-3 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center border border-[#E1E4EA] bg-white text-[#667085]">
+                        <UserRound size={13} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-[11.5px] font-medium text-[#273449]">
+                          {selectedClient.name}
+                        </p>
+
+                        <p className="mt-0.5 truncate text-[9.5px] text-[#98A2B3]">
+                          {selectedClient.whatsappNumber}
+                          {" • "}
+                          {selectedClient.identityType}
+                          {" • "}
+                          {selectedClient.identityNumberMasked}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedClientId("");
+                        setClientSearch("");
+                        setIsClientSearchOpen(true);
+                      }}
+                      className="ml-3 shrink-0 text-[10px] font-medium text-[#667085] transition-colors hover:text-[#17223B]"
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search
+                      size={13}
+                      className="pointer-events-none absolute left-3 top-[11px] text-[#98A2B3]"
+                    />
+
+                    <input
+                      id="clientSearch"
+                      type="search"
+                      value={clientSearch}
+                      disabled={isLoadingClients}
+                      onFocus={() => setIsClientSearchOpen(true)}
+                      onChange={(event) => {
+                        setClientSearch(event.target.value);
+                        setIsClientSearchOpen(true);
+                      }}
+                      placeholder={
+                        isLoadingClients
+                          ? "Loading clients..."
+                          : "Search existing client..."
+                      }
+                      className="h-9 w-full border border-[#DDE1E8] bg-white pl-8 pr-3 text-[12px] text-[#18212F] outline-none placeholder:text-[#98A2B3] focus:border-[#667694] disabled:bg-[#F7F8FA]"
+                    />
+
+                    {isClientSearchOpen && !isLoadingClients && (
+                      <div className="absolute left-0 right-0 top-[40px] z-20 max-h-[215px] overflow-y-auto border border-[#DDE1E8] bg-white shadow-sm">
+                        {filteredClients.length === 0 ? (
+                          <div className="px-3 py-4 text-center">
+                            <p className="text-[10.5px] text-[#98A2B3]">
+                              No matching clients.
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => setCreateClientOpen(true)}
+                              className="mt-2 text-[10.5px] font-medium text-[#53627E]"
+                            >
+                              Add new client
+                            </button>
+                          </div>
+                        ) : (
+                          filteredClients.map((client) => (
+                            <button
+                              key={client.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedClientId(client.id);
+                                setClientSearch("");
+                                setIsClientSearchOpen(false);
+                              }}
+                              className="flex w-full items-center gap-2.5 border-b border-[#EEF0F3] px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-[#FAFBFC]"
+                            >
+                              <UserRound
+                                size={13}
+                                className="shrink-0 text-[#98A2B3]"
+                              />
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[11.5px] font-medium text-[#344054]">
+                                  {client.name}
+                                </p>
+
+                                <p className="mt-0.5 truncate text-[9.5px] text-[#98A2B3]">
+                                  {client.whatsappNumber}
+                                  {" • "}
+                                  {client.identityType}
+                                  {" • "}
+                                  {client.identityNumberMasked}
+                                </p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* PROFESSIONAL FEE */}
+              <div>
+                <label
+                  htmlFor="totalFee"
+                  className="mb-1.5 block text-[12px] font-medium text-[#344054]"
+                >
+                  Professional Fee
+                </label>
+
+                <div className="flex">
+                  <input
+                    id="totalFee"
+                    type="text"
+                    inputMode="decimal"
+                    value={totalFee}
+                    onChange={(event) => {
+                      const value = event.target.value;
+
+                      if (value === "" || /^\d*(\.\d{0,3})?$/.test(value)) {
+                        setTotalFee(value);
+                      }
+                    }}
+                    placeholder="1000.000"
+                    className="h-9 min-w-0 flex-1 border border-r-0 border-[#DDE1E8] bg-white px-3 text-[12px] text-[#18212F] outline-none placeholder:text-[#98A2B3] focus:border-[#667694]"
+                  />
+
+                  <div className="flex h-9 w-[58px] shrink-0 items-center justify-center border border-[#DDE1E8] bg-[#FAFAFB] text-[11px] font-medium text-[#53627E]">
+                    BHD
+                  </div>
+                </div>
+
+                <p className="mt-1 text-[9.5px] text-[#98A2B3]">
+                  Total agreed professional fee for this case.
+                </p>
               </div>
             </div>
           </div>
@@ -405,6 +702,12 @@ export default function CreateCaseDrawer({
           </div>
         </form>
       </aside>
+
+      <CreateClientModal
+        open={createClientOpen}
+        onClose={() => setCreateClientOpen(false)}
+        onSelected={handleClientSelected}
+      />
     </>
   );
 }
