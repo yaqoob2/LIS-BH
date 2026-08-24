@@ -22,17 +22,10 @@ export class WhatsAppService {
         'TWILIO_WHATSAPP_FROM',
       );
 
-      const contentSid = this.configService.getOrThrow<string>(
-        'TWILIO_WHATSAPP_CONTENT_SID',
-      );
-
       const result = await this.client.messages.create({
         from,
         to: `whatsapp:${to}`,
-        contentSid,
-        contentVariables: JSON.stringify({
-          1: message,
-        }),
+        body: message,
       });
 
       return {

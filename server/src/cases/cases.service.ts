@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { UserRole } from '../generated/prisma/client';
+
+import { DeadlineStatus, UserRole } from '../generated/prisma/client';
+
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 
@@ -23,6 +25,7 @@ export class CasesService {
         email: true,
       },
     },
+
     createdBy: {
       select: {
         id: true,
@@ -30,6 +33,7 @@ export class CasesService {
         email: true,
       },
     },
+
     client: {
       select: {
         id: true,
@@ -50,6 +54,7 @@ export class CasesService {
       where: {
         id: clientId,
       },
+
       select: {
         id: true,
         isActive: true,
@@ -74,6 +79,7 @@ export class CasesService {
       where: {
         id: assignedUserId,
       },
+
       select: {
         id: true,
         isActive: true,
@@ -114,12 +120,15 @@ export class CasesService {
       const newCase = await tx.case.create({
         data: {
           referenceNumber,
+
           title: dto.title.trim(),
+
           caseType: dto.caseType.trim(),
 
           category: dto.category?.trim() || null,
 
           status: dto.status,
+
           priority: dto.priority,
 
           description: dto.description?.trim() || null,
@@ -141,8 +150,11 @@ export class CasesService {
       await tx.auditLog.create({
         data: {
           userId,
+
           action: 'CASE_CREATED',
+
           entityType: 'CASE',
+
           entityId: newCase.id,
         },
       });
@@ -152,7 +164,7 @@ export class CasesService {
   }
 
   async findAll(userId: string, userRole: UserRole) {
-    return this.prisma.case.findMany({
+    const cases = await this.prisma.case.findMany({
       where:
         userRole === UserRole.ADMIN
           ? {}
@@ -171,7 +183,43 @@ export class CasesService {
         createdAt: 'desc',
       },
 
-      include: this.caseInclude,
+      include: {
+        ...this.caseInclude,
+
+        deadlines: {
+          where: {
+            status: DeadlineStatus.OPEN,
+          },
+
+          orderBy: {
+            dueDate: 'asc',
+          },
+
+          take: 1,
+
+          select: {
+            id: true,
+
+            title: true,
+
+            deadlineType: true,
+
+            dueDate: true,
+
+            status: true,
+          },
+        },
+      },
+    });
+
+    return cases.map((caseRecord) => {
+      const { deadlines, ...caseData } = caseRecord;
+
+      return {
+        ...caseData,
+
+        nextDeadline: deadlines[0] ?? null,
+      };
     });
   }
 
@@ -289,8 +337,11 @@ export class CasesService {
       await tx.auditLog.create({
         data: {
           userId,
+
           action: 'CASE_UPDATED',
+
           entityType: 'CASE',
+
           entityId: updatedCase.id,
         },
       });
@@ -323,6 +374,7 @@ export class CasesService {
 
         data: {
           assignedUserId: userId,
+
           updatedById: userId,
         },
       });
@@ -334,8 +386,11 @@ export class CasesService {
       await tx.auditLog.create({
         data: {
           userId,
+
           action: 'CASE_CLAIMED',
+
           entityType: 'CASE',
+
           entityId: id,
         },
       });
@@ -404,6 +459,7 @@ export class CasesService {
           action: assignedUserId ? 'CASE_ASSIGNED' : 'CASE_UNASSIGNED',
 
           entityType: 'CASE',
+
           entityId: id,
         },
       });
