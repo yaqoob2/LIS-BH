@@ -3,7 +3,7 @@ import { ArrowLeft, CalendarDays, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import { getCase } from "../../api/cases";
+import { getCase, updateCase } from "../../api/cases";
 
 import type { CasePriority, CaseRecord, CaseStatus } from "../../types/case";
 
@@ -62,6 +62,10 @@ export default function CaseDetailPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  const [closeConfirmationOpen, setCloseConfirmationOpen] = useState(false);
+
+  const [isClosing, setIsClosing] = useState(false);
+
   const [activeTab, setActiveTab] = useState<
     "overview" | "parties" | "documents" | "deadlines" | "fees" | "ai"
   >("overview");
@@ -89,6 +93,31 @@ export default function CaseDetailPage() {
 
     void loadCase();
   }, [id]);
+
+  async function confirmCloseCase() {
+    if (!caseRecord || isClosing) return;
+
+    try {
+      setIsClosing(true);
+
+      const updatedCase = await updateCase(caseRecord.id, {
+        status: "CLOSED",
+      });
+
+      setCaseRecord(updatedCase);
+
+      setCloseConfirmationOpen(false);
+
+      toast.success("Case closed successfully.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to close case.";
+
+      toast.error(message);
+    } finally {
+      setIsClosing(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -163,7 +192,7 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <span className="border border-[#DCE2EA] bg-[#F7F8FA] px-2 py-1 text-[10.5px] font-medium text-[#53627E]">
             {statusLabels[caseRecord.status]}
           </span>
@@ -171,6 +200,17 @@ export default function CaseDetailPage() {
           <span className="border border-[#E4E7EC] bg-white px-2 py-1 text-[10.5px] font-medium text-[#667085]">
             {priorityLabels[caseRecord.priority]}
           </span>
+
+          {caseRecord.status !== "CLOSED" && (
+            <button
+              type="button"
+              onClick={() => setCloseConfirmationOpen(true)}
+              disabled={isClosing}
+              className="h-7 border border-[#DDE1E8] bg-white px-2.5 text-[10.5px] font-medium text-[#475467] transition-colors hover:bg-[#F8F9FB] disabled:opacity-50"
+            >
+              Close Case
+            </button>
+          )}
         </div>
       </div>
 
@@ -439,6 +479,42 @@ export default function CaseDetailPage() {
 
       {/* AI TAB */}
       {activeTab === "ai" && <CaseAiTab caseId={caseRecord.id} />}
+
+      {closeConfirmationOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#101828]/25 px-4">
+          <div className="w-full max-w-[340px] border border-[#DDE1E8] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.12)]">
+            <div className="px-5 py-4">
+              <h3 className="text-[14px] font-semibold text-[#172033]">
+                Close case?
+              </h3>
+
+              <p className="mt-2 text-[11.5px] leading-5 text-[#667085]">
+                Are you sure you want to close this case?
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-[#E7E9EE] px-5 py-3">
+              <button
+                type="button"
+                onClick={() => setCloseConfirmationOpen(false)}
+                disabled={isClosing}
+                className="h-8 min-w-[64px] border border-[#DDE1E8] bg-white px-3 text-[11.5px] font-medium text-[#475467] transition-colors hover:bg-[#F8F9FB] disabled:opacity-50"
+              >
+                No
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void confirmCloseCase()}
+                disabled={isClosing}
+                className="h-8 min-w-[64px] bg-[#17223B] px-3 text-[11.5px] font-medium text-white transition-colors hover:bg-[#243250] disabled:opacity-50"
+              >
+                {isClosing ? "Closing..." : "Yes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
